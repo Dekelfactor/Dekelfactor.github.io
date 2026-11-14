@@ -11,3 +11,10 @@ The Katana master (`renders/katana-final.mp4`, not in git) is kept as is; these 
   trims at 36.75s and joins the end card; the Katana audio runs underneath. See the session for the exact filter graph.
 
 Paths inside the scripts point at this session's scratch folder; adjust them when re-running elsewhere.
+
+## Open Stage Jam logo
+The original logo is the inline SVG of the app's welcome screen (`<svg class="ws-hero-logo">` in
+Dekelfactor/openstagejam `index.html`). `logo.cjs <svg> <out.png> <width>` renders it to a transparent PNG with the
+app's own red glow; `screencards3d.py` splits it into the mic mark and the wordmark for the "with Open Stage Jam" tag
+(14.75–26.4s, covering the baked Katana tag), and `endcards.py <out> linkedin-logo` places it under a 3D
+"Designed & built" line on the LinkedIn end card. The logo files themselves stay out of this public repo.

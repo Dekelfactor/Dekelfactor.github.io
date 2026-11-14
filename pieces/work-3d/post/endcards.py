@@ -10,6 +10,8 @@ F = '/usr/share/fonts/opentype/inter/'
 font = lambda name, size: ImageFont.truetype(F + name, size)
 JAM3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/jam3d-b.png').convert('RGBA'); JAM3D = JAM3D.crop(JAM3D.getbbox())
 OSJ3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/osj3d-b.png').convert('RGBA'); OSJ3D = OSJ3D.crop(OSJ3D.getbbox())
+LOGO = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/osj-logo.png').convert('RGBA'); LOGO = LOGO.crop(LOGO.getbbox())
+DESIGNED = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/designed3d.png').convert('RGBA')
 HEAD = Image.open('/home/user/Dekelfactor.github.io/pieces/_work/me-happy.png').convert('RGBA')
 os.makedirs(OUT, exist_ok=True)
 
@@ -43,9 +45,9 @@ def frame(t):
     # Paper-me pops in
     s = ease(t / 0.5) * (1 + 0.02 * math.sin(t * 3))
     if s > 0.01:
-        h = int(330 * s); w = int(h * HEAD.width / HEAD.height)
+        h = int((260 if KIND == 'linkedin-logo' else 330) * s); w = int(h * HEAD.width / HEAD.height)
         hd = HEAD.resize((max(1, w), max(1, h)), Image.LANCZOS)
-        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
+        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410, 'linkedin-logo': 370}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
     if KIND == 'reels3d':
         # the 3D lettering: pops in with an overshoot, settles with a slow float, a light sweeps across it
         u = ease((t - 0.2) / 0.55)
@@ -94,6 +96,24 @@ def frame(t):
             if u > 0.9: d.text((W / 2, 1326), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
         text(img, 'Open to product design roles', font('InterDisplay-ExtraBold.otf', 42), W / 2, 1420, (255, 255, 255), t, 1.0)
         text(img, 'Dekel Factor Designs', font('InterDisplay-ExtraBold.otf', 30), W / 2, 1472, (190, 170, 160), t, 1.15)
+    elif KIND == 'linkedin-logo':
+        u = ease((t - 0.2) / 0.5)
+        if u > 0.01:   # "Designed & built" in 3D
+            tw = int(700 * u); th = int(tw * DESIGNED.height / DESIGNED.width)
+            img.alpha_composite(DESIGNED.resize((tw, th), Image.LANCZOS), (W // 2 - tw // 2, 640 - th // 2 + int(math.sin(t * 2.0) * 4)))
+        u = ease((t - 0.45) / 0.55)
+        if u > 0.01:   # the original Open Stage Jam logo, with its own glow
+            lh = int(470 * u); lw = int(lh * LOGO.width / LOGO.height)
+            img.alpha_composite(LOGO.resize((lw, lh), Image.LANCZOS), (W // 2 - lw // 2, 985 - lh // 2))
+        text(img, 'from research to a live product.', font('InterDisplay-ExtraBold.otf', 44), W / 2, 1262, (255, 255, 255), t, 0.75)
+        u = eo((t - 0.95) / 0.4)
+        if u > 0:
+            d = ImageDraw.Draw(img); fnt = font('InterDisplay-ExtraBold.otf', 38); s2 = 'Case study in the first comment'
+            tw2 = d.textlength(s2, font=fnt); pw = (tw2 + 72) * u
+            d.rounded_rectangle((W / 2 - pw / 2, 1292, W / 2 + pw / 2, 1368), radius=38, fill=RED)
+            if u > 0.9: d.text((W / 2, 1343), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
+        text(img, 'Open to product design roles', font('InterDisplay-ExtraBold.otf', 40), W / 2, 1430, (255, 255, 255), t, 1.15)
+        text(img, 'Dekel Factor Designs', font('InterDisplay-ExtraBold.otf', 28), W / 2, 1476, (190, 170, 160), t, 1.3)
     elif KIND == 'reels':
         text(img, 'Comment', font('InterDisplay-ExtraBold.otf', 84), W / 2, 820, (255, 255, 255), t, 0.15)
         text(img, 'JAM', font('InterDisplay-Black.otf', 330), W / 2, 1120, RED, t, 0.3, ls=-8)

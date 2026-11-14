@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
-W, H, FPS, T0, T1 = 1080, 1920, 30, 15.0, 26.4
+W, H, FPS, T0, T1 = 1080, 1920, 30, 14.75, 26.4
 FL = '/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/flow/'
 FONT = ImageFont.truetype('/usr/share/fonts/opentype/inter/InterDisplay-ExtraBold.otf', 30)
 
@@ -76,9 +76,26 @@ def put(img, F, cx, cy, t_in, t_out, t, ry_end, label=None, phase=0.0):
         if la < 1: p.putalpha(p.split()[3].point(lambda q: int(q * la)))
         img.alpha_composite(p, (int(cx - p.width / 2), int(y + F.height * 0.5 * s + 10)))
 
+
+def logotag():
+    """the 'with Open Stage Jam' tag, rebuilt with the real logo: a dark glass pill, a fine red rim, 'with', the mic mark and the wordmark"""
+    icon = Image.open(S_ + 'osj-icon.png').convert('RGBA'); word = Image.open(S_ + 'osj-word.png').convert('RGBA')
+    ih = 70; icon = icon.resize((int(icon.width * ih / icon.height), ih), Image.LANCZOS)
+    wh = 74; word = word.resize((int(word.width * wh / word.height), wh), Image.LANCZOS)
+    f = ImageFont.truetype('/usr/share/fonts/opentype/inter/InterDisplay-ExtraBold.otf', 30)
+    pw, ph = 580, 104; p = Image.new('RGBA', (pw, ph), (0, 0, 0, 0)); d = ImageDraw.Draw(p)
+    d.rounded_rectangle((0, 0, pw - 1, ph - 1), ph // 2, fill=(14, 10, 12, 255), outline=(255, 40, 60, 255), width=3)
+    tw = f.getlength('with'); total = tw + 18 + icon.width + 14 + word.width; x = (pw - total) / 2
+    d.text((x, ph / 2 + 11), 'with', font=f, fill=(235, 230, 228, 255), anchor='ls'); x += tw + 18
+    p.alpha_composite(icon, (int(x), (ph - ih) // 2)); x += icon.width + 14
+    p.alpha_composite(word, (int(x), (ph - wh) // 2))
+    return p
+S_ = '/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/'
+TAG = logotag()
 CK = face('o-checkedin.webp', 700); QU = face('s-queueline.webp', 800); LK = face('f-lock.webp', 800); NS = face('o-onstage2.webp', 780)
 for i in range(int(round((T1 - T0) * FPS))):
     t = T0 + i / FPS; img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    if 14.77 <= t < 26.37: img.alpha_composite(TAG, (540 - TAG.width // 2, 172 - TAG.height // 2))
     put(img, CK, 215, 640, 15.15, 17.57, t, ry_end=18, label="You're checked in")
     put(img, QU, 860, 560, 17.70, 20.40, t, ry_end=-18, label='Your place in line', phase=0.6)
     put(img, LK, 850, 590, 20.50, 23.17, t, ry_end=-18, label='Live alert', phase=1.2)

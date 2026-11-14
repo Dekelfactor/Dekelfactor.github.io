@@ -56,42 +56,18 @@ function tagLine(str, t, col) { const f = () => { if (TT < t) return; ctx.save()
 function caption(lines, t, accent, y = 1300, size = 88) { gxTitle(lines, 90, y, size, { t, accent }); }
 
 // ---------------------------------------------------------------------
-//  1. HOOK — your app makes sense to you. Your users? Lost.
-// ---------------------------------------------------------------------
-function sceneHook() {
-  gxWorld(GX.violet, { a: 0.14, key: 'hook', dust: 80 });
-  // a confusing app: a phone whose blocks keep reshuffling
-  const lost = TT >= CU.lost;
-  phoneFrame(540, 920, 800, (x0, y0, w, h) => {
-    ctx.fillStyle = '#1b1b22'; ctx.fillRect(x0, y0, w, h);
-    const R = RNG('mess', lost ? Math.floor(TT * 6) : 0);
-    for (let i = 0; i < 14; i++) { const bx = x0 + 24 + R.r(0, w - 180), by = y0 + 60 + i * 52 + (lost ? R.n(14) : 0), bw = R.r(80, w - 60 - (bx - x0)); ctx.fillStyle = ['#2a2a34', '#33333f', '#3b2a44', '#24303a'][i % 4]; ctx.beginPath(); ctx.roundRect(bx, by, bw, 36, 10); ctx.fill(); }
-    if (lost) for (let i = 0; i < 4; i++) { const R2 = RNG('q', i); gxText('?', x0 + R2.r(40, w - 60), y0 + R2.r(120, h - 60), 90, GX.violet, { weight: 800, font: GX_SANS }); }
-  }, { s: EZ.o3(clamp(TT / 0.5)), rot: lost ? Math.sin(TT * 20) * 0.01 : 0 });
-  if (lost) me(820, 1240, 66, { mood: 'wow', key: 'heroH', s: popS(CU.lost + 0.1) });
-  if (TT < CU.pains) {
-    gxTitle(['Your app makes', 'sense to you.'], 90, 420, 96, { t: 0.2 });
-    if (lost) gxTitle(['Your users?', 'Lost.'], 90, 1480, 96, { t: CU.lost, accent: { 'Lost': GX.violet } });
-  }
-  // their pains fly at the camera
-  if (TT >= CU.pains) {
-    const items = [['drop-off at sign-up', -260, -320], ['too many steps', 220, -60], ['how do I…?', -200, 220], ['1-star review', 200, 420]];
-    items.forEach(([str, dx, dy], i) => {
-      const t0 = CU.pains + i * 0.75, u = clamp((TT - t0) / 1.6); if (u <= 0 || u >= 1) return;
-      const k = 0.4 + u * u * 3.2;
-      ctx.save(); ctx.translate(540 + dx * k * 0.6, 960 + dy * k * 0.6); ctx.scale(k, k); if (u > 0.7) ctx.filter = `blur(${((u - 0.7) * 40).toFixed(1)}px)`;
-      gxChip(str, 0, 0, 34, { fill: 'rgba(255,60,90,0.18)', line: 'rgba(255,120,140,0.6)' }); ctx.restore();
-    });
-    gxTitle(['Sound familiar?'], 90, 420, 96, { t: CU.pains + 0.2, accent: { 'familiar?': GX.violet } });
-  }
-}
-// ---------------------------------------------------------------------
 //  2. PROMISE — Paper-me inside the glass ring
 // ---------------------------------------------------------------------
 function scenePromise() {
   gxPhoto('bg-intro.jpg', { zoom: 1.04 + (TT - E0) * 0.02, focus: [0.52, 0.46] });
-  me(648, 830, 66, { mood: 'smile', key: 'heroI', glow: '#9fb4ff' });
-  gxTitle(['I make complex', 'products feel', 'simple.'], 90, 1250, 104, { t: CU.thesis, accent: { simple: GX.violet } });
+  if (TT < CU.thesis) {
+    gxTitle(['That first night?'], 90, 560, 100, { t: CU.turn1 });
+    gxTitle(["That's how a", 'confusing product', 'feels to your users.'], 90, 1180, 88, { t: CU.turn2, accent: { 'users.': GX.violet } });
+    me(648, 830, 60, { mood: 'focus', key: 'heroI', glow: '#9fb4ff' });
+  } else {
+    me(648, 830, 66, { mood: 'smile', key: 'heroI', glow: '#9fb4ff' });
+    gxTitle(['I make complex', 'products feel', 'simple.'], 90, 1250, 104, { t: CU.thesis, accent: { simple: GX.violet } });
+  }
 }
 // ---------------------------------------------------------------------
 //  3. THE STORY — a jam night, without and with
@@ -101,7 +77,13 @@ function sceneStory() {
   const flick = TT >= CU.rewind && TT < CU.a_scan && Math.floor(TT * 24) % 2 === 0;   // the rewind: a time-cut flicker on 2s
   venue(warm && !flick, { dx: warm ? Math.sin(TT * 0.3) * 30 : -TT * 6 });
   if (!warm) {
-    tagLine('Without the app', E0, 'rgba(120,130,150,0.35)');
+    if (TT < CU.b_scroll) {   // the cold open
+      me(540, 980, 92, { mood: 'focus', key: 'heroS' });
+      gxTitle(['Waited all night', 'to sing…'], 90, 560, 104, { t: CU.hook });
+      gxTitle(['…and never', 'got on?'], 90, 1360, 104, { t: CU.hook2, accent: { 'on?': '#9aa6c0' } });
+      return;
+    }
+    tagLine('Without the app', CU.b_scroll, 'rgba(120,130,150,0.35)');
     // a. chasing the night across posts
     beat(CU.b_scroll, CU.b_msg, 540, 900, () => {
       const scroll = (TT - CU.b_scroll) * 260;
@@ -110,7 +92,7 @@ function sceneStory() {
         .forEach(([w, t, c], i) => post(100, 1140 + i * 180 - scroll, 880, w, t, c));
       ctx.restore();
       me(540, 1400, 64, { mood: 'focus', key: 'heroS' });
-      caption(['Tuesday. Jam night.', 'Where? When? Am I on?'], CU.b_scroll + 0.2, { 'on?': '#9aa6c0' }, 500, 76);
+      caption(['Where? When?', 'Is there a list?'], CU.b_scroll + 0.2, { 'list?': '#9aa6c0' }, 500, 76);
     });
     // b. a message, no reply
     beat(CU.b_msg, CU.b_wait, 540, 900, () => {
@@ -144,14 +126,14 @@ function sceneStory() {
     });
     // b. your place in line, in words
     beat(CU.a_queue, CU.a_next, 540, 900, () => {
-      gxPhone('osj26-queue.jpg', 540, 930, 980, { glow: GX.red, s: 1 });
+      gxPhone('osj26-queue.jpg', 540, 1010, 880, { glow: GX.red, s: 1 });
       me(880, 1380, 60, { mood: 'smile', key: 'heroS' });
       caption(['2 before you.'], CU.a_queue + 0.2, { '2': GX.red }, 500, 84);
     });
     // c. the buzz
     beat(CU.a_next, CU.a_stage, 540, 900, () => {
       const buzz = Math.sin(TT * 60) * 6 * Math.exp(-(TT - CU.a_next) * 4);
-      gxPhone('osj26-lock.jpg', 540 + buzz, 930, 980, { glow: GX.red, s: 1 });
+      gxPhone('osj26-lock.jpg', 540 + buzz, 1010, 880, { glow: GX.red, s: 1 });
       me(200, 1380, 66, { mood: 'wow', key: 'heroS' });
       caption(["You're next."], CU.a_next + 0.1, { "next.": GX.red }, 500, 96);
     });

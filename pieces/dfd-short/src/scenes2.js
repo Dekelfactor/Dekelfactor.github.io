@@ -32,7 +32,7 @@ function sceneSite() {
   if (past(TT, CU.click) && TT < CU.click + 0.6) { ctx.strokeStyle = PAL.yellow; ctx.lineWidth = 6; ctx.beginPath(); ctx.roundRect(580 + 60 * 300 / 780, 660 + 1126 * 650 / 1688, 205 * 300 / 780, 62 * 650 / 1688, 14); ctx.stroke(); }
   // the spark: a sticker between the phones
   const SPK = [520, 1320];
-  if (past(TT, CU.hero)) { markDisc(SPK[0], SPK[1], 90 * popS(CU.hero), 'stk'); spark(SPK[0], SPK[1], 48 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' }); }
+  if (past(TT, CU.hero)) { markDisc(SPK[0], SPK[1], 90 * popS(CU.hero), 'stk'); me(SPK[0], SPK[1], 48 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' }); }
   // the cursor glides to the card and clicks
   if (past(TT, CU.lines)) {
     const cx = springTrack([[CU.lines, 960], [CU.button + 0.25, TGT[0]]], SPRING.smooth), cy = springTrack([[CU.lines, 1320], [CU.button + 0.25, TGT[1]]], SPRING.smooth);
@@ -70,7 +70,7 @@ function sceneLaunch() {
   const b = 1 + 0.1 * Math.exp(-(TT - CU.slam) * 7) * Math.cos((TT - CU.slam) * 22);
   ctx.save(); ctx.translate(SIGN[0], SIGN[1]); ctx.scale(b, b); ctx.translate(-SIGN[0], -SIGN[1]);
   markDisc(SIGN[0], SIGN[1], 150, 'sign');
-  spark(SIGN[0], SIGN[1], 66, { rays: 8, mood: 'happy', key: 'hero' });
+  me(SIGN[0], SIGN[1], 66, { rays: 8, mood: 'laugh', key: 'hero' });
   ctx.restore();
   for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, d = 200 + 50 * ev(CU.slam, 0.4); if (TT < CU.slam + 1.2) sparkle(SIGN[0] + Math.cos(a) * d, SIGN[1] + Math.sin(a) * d, 22, '#fff6c8'); }
   // the street and two passers-by turning to look
@@ -94,7 +94,7 @@ function sceneHome() {
   note(540, 470, 1, PAL.pinkL, -0.12, 'n1');
   note(555, 640, 1, PAL.mint, 0.1, 'n2');
   markDisc(MARK[0], MARK[1] - 20, 190, 'home');
-  spark(MARK[0], MARK[1] - 20, 78, { rays: 8, mood: 'happy', key: 'hero' });
+  me(MARK[0], MARK[1] - 20, 78, { rays: 8, mood: 'smile', key: 'hero' });
   const f = () => tag('Dekel Factor Designs', 520, 1300, 66, { rot: -0.02, frac: ev(CU.title, 0.5) });
   if (DEFER) DEFER.push(f); else f();
 }

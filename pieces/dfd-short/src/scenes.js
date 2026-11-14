@@ -2,6 +2,23 @@
 //  SCENES — one function per era, world coords 1080x1920. Orange is the spark (the idea) only.
 //  The mark: a mustard paper disc with a stitched ring, the spark sitting on it.
 // =====================================================================
+// ---- THE HERO: paper-me, the user's own head sticker (assets/me-*.png). Same call shape as the kit's spark().
+//  moods: focus = asleep, wow, happy, laugh, smile (a wink). Idle bob and sway on 2s; blinks with the asleep face.
+const ME_FACE = { focus: 'me-asleep.png', wow: 'me-wow.png', happy: 'me-happy.png', laugh: 'me-laugh.png', smile: 'me-smile.png' };
+function me(x, y, r, o = {}) {
+  const sc = o.s ?? 1; if (sc <= 0.01) return;
+  const key = o.key ?? 'me', ph = key.length * 1.7;
+  let mood = o.mood ?? 'smile';
+  if (mood !== 'focus' && mood !== 'laugh' && (B + Math.round(ph * 5)) % 37 < 2) mood = 'focus';   // a blink
+  const img = asset(ME_FACE[mood] || ME_FACE.smile); if (!img) return;
+  const h = r * 4.0 * sc, w = h * img.width / img.height;
+  y += Math.sin(TT * TAU * 0.9 + ph) * r * 0.035;
+  SPARK_AT = toScreen(x, y);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(TT * 2.1 + ph) * 0.04);
+  ctx.shadowColor = 'rgba(35,20,10,0.35)'; ctx.shadowBlur = 14; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 8;
+  ctx.drawImage(img, -w / 2, -h * 0.46, w, h);
+  ctx.restore();
+}
 const CU = TIMELINE.cues;
 const MARK = [540, 1050];                  // where the sketch, the badge and the finished mark sit on the sheet
 function cap(str, t) { if (!past(TT, t)) return; const f = () => tag(str, CX, H - SAFE.bottom - 60, 50, { rot: 0.012, tape: false, frac: ev(t, 0.6) }); if (DEFER) DEFER.push(f); else f(); }
@@ -58,7 +75,7 @@ function sceneSketch() {
   [[[300, 830], [340, 870]], [[780, 830], [740, 870]], [[540, 790], [540, 840]]].forEach((L, i) => ink(L, { w: 5, color: PAL.charcoal, frac: ev(CU.sketch1 - 0.5 + i * 0.15, 0.2), key: 'il' + i }));
   if (!on) { ctx.fillStyle = 'rgba(10,12,35,0.42)'; ctx.fillRect(-30, -30, W + 60, H + 60); }
   const woke = past(TT, CU.ray5);
-  spark(MARK[0], MARK[1], 84, { rays: woke ? 5 : 4, mood: !on ? 'focus' : woke ? 'happy' : 'wow', key: 'hero', s: woke ? 1 + 0.12 * Math.exp(-(TT - CU.ray5) * 6) : 0.9 });
+  me(MARK[0], MARK[1], 84, { rays: woke ? 5 : 4, mood: !on ? 'focus' : woke ? 'happy' : 'wow', key: 'hero', s: woke ? 1 + 0.12 * Math.exp(-(TT - CU.ray5) * 6) : 0.9 });
   // the pencil (and the hand holding it) follows the tip while sketching
   if (TT >= CU.sketch0 && TT < CU.sketch1 + 0.25) {
     const [tx, ty] = pointAt([...RING, RING[0]], clamp(fr, 0.001, 1)), ang = -0.7;
@@ -66,7 +83,7 @@ function sceneSketch() {
     hand(tx + Math.cos(ang) * 200, ty + Math.sin(ang) * 200, 0.8, ang + Math.PI, PAL.skin1, PAL.purple, { key: 'hnd' });
   }
   stepTag('1 · sketch', CU.lamp);
-  cap('every brand starts as a spark', CU.lamp + 0.25);
+  cap('every brand starts as an idea', CU.lamp + 0.25);
 }
 // ---- 2. the cutting mat: scissors cut the badge out
 function sceneCut() {
@@ -94,7 +111,7 @@ function sceneCut() {
     ctx.setLineDash([16, 14]); ink(CIR, { closed: true, w: 3, color: 'rgba(42,29,24,0.55)', amt: 0.5, key: 'guide' }); ctx.setLineDash([]);
     ink(CIR, { closed: true, w: 7, color: '#fff7e6', frac: fr, amt: 0.5, key: 'cutline' });
   }
-  spark(lx, ly, 82, { rays: 6, mood: lift > 0 ? 'happy' : 'focus', key: 'hero' });
+  me(lx, ly, 82, { rays: 6, mood: lift > 0 ? 'happy' : 'smile', key: 'hero' });
   // the scissors ride the cut line, snipping on every 8th
   if (TT >= CU.snip0 - 0.25 && TT < CU.snip1 + 0.25) {
     const P = [...CIR, CIR[0]], u = clamp(fr, 0.002, 0.999), [sx, sy] = pointAt(P, u), [qx, qy] = pointAt(P, Math.min(1, u + 0.01));

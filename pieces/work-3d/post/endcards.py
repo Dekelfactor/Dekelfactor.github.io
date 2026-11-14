@@ -42,10 +42,10 @@ def text(img, s, fnt, cx, y, fill, t, t0, ls=0):
     img.alpha_composite(layer)
 
 def frame(t):
-    img = (BG_OSJ if KIND in ('linkedin-osj', 'linkedin-v2') else BG).convert('RGBA')
+    img = (BG_OSJ if KIND in ('linkedin-osj', 'linkedin-v2', 'linkedin-v3') else BG).convert('RGBA')
     # Paper-me pops in
     s = ease(t / 0.5) * (1 + 0.02 * math.sin(t * 3))
-    if s > 0.01 and KIND != 'linkedin-v2':
+    if s > 0.01 and KIND not in ('linkedin-v2', 'linkedin-v3'):
         h = int((260 if KIND in ('linkedin-logo', 'linkedin-osj') else 330) * s); w = int(h * HEAD.width / HEAD.height)
         hd = HEAD.resize((max(1, w), max(1, h)), Image.LANCZOS)
         img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410, 'linkedin-logo': 370, 'linkedin-osj': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
@@ -187,6 +187,57 @@ def frame(t):
             img.alpha_composite(hd, (int(x0), 1392))
             tx('Dekel Factor Designs', nf, x0 + hd.width + 26, 1440, (255, 255, 255), 1.15, anchor='ls')
             tx('OPEN TO PRODUCT DESIGN ROLES', mf, x0 + hd.width + 26, 1480, RED_, 1.25, anchor='ls', ls=3)
+    elif KIND == 'linkedin-v3':
+        FD = S_FONTS; RED_ = (251, 13, 31)
+        def tx(parts, fnt, x, y, t0, anchor='ms', ls=0):
+            """parts: [(text, rgb)], drawn as one line; fades and rises in"""
+            u = eo((t - t0) / 0.5)
+            if u <= 0: return
+            layer = Image.new('RGBA', img.size, (0, 0, 0, 0)); d = ImageDraw.Draw(layer)
+            chars = [(c, col) for txt, col in parts for c in txt]
+            w = sum(d.textlength(c, font=fnt) for c, _ in chars) + ls * (len(chars) - 1)
+            xx = x - w / 2 if anchor == 'ms' else x; yy = y + (1 - u) * 26
+            for c, col in chars:
+                d.text((xx, yy), c, font=fnt, fill=col + (int(255 * u),), anchor='ls'); xx += d.textlength(c, font=fnt) + ls
+            img.alpha_composite(layer)
+        # a soft stage beam from above onto the logo
+        u = eo(t / 0.8)
+        beam = Image.new('L', (W, H), 0); bd = ImageDraw.Draw(beam)
+        bd.polygon([(W / 2 - 80, -40), (W / 2 + 40, -40), (W / 2 + 310, 900), (W / 2 - 350, 900)], fill=int(70 * u))
+        beam = beam.filter(ImageFilter.GaussianBlur(60))
+        img.alpha_composite(Image.merge('RGBA', (Image.new('L', (W, H), 255), Image.new('L', (W, H), 70), Image.new('L', (W, H), 80), beam)))
+        # 1. the logo (hero), centred in the upper half
+        u = ease((t - 0.1) / 0.6)
+        if u > 0.01:
+            lh = int(500 * (0.88 + 0.12 * u)); lw = int(lh * LOGO.width / LOGO.height)
+            L = LOGO.resize((lw, lh), Image.LANCZOS)
+            if u < 1: L.putalpha(L.split()[3].point(lambda v: int(v * min(1, u))))
+            img.alpha_composite(L, (W // 2 - 20 - lw // 2, 680 - lh // 2))
+        # 2. one message: white, red only on LIVE; spacing rhythm = 56px
+        hf = ImageFont.truetype(FD + 'BebasNeue.ttf', 100)
+        WH = (255, 255, 255)
+        tx([('DESIGNED & BUILT', WH)], hf, W / 2 - 20, 1040, 0.45, ls=3)
+        tx([('FROM RESEARCH TO ', WH), ('LIVE.', RED_)], hf, W / 2 - 20, 1130, 0.6, ls=3)
+        u = eo((t - 0.85) / 0.4)
+        if u > 0:
+            d = ImageDraw.Draw(img); fnt = ImageFont.truetype(FD + 'SpaceGrotesk-Bold.ttf', 36); s2 = 'Case study in the first comment'
+            tw2 = d.textlength(s2, font=fnt); pw = tw2 + 88; a_ = int(255 * u); y0 = 1186 + (1 - u) * 20
+            pl = Image.new('RGBA', img.size, (0, 0, 0, 0)); pd = ImageDraw.Draw(pl)
+            pd.rounded_rectangle((W / 2 - 20 - pw / 2, y0, W / 2 - 20 + pw / 2, y0 + 78), radius=39, fill=(255, 255, 255, int(a_ * 0.10)), outline=(255, 255, 255, int(a_ * 0.85)), width=2)
+            pd.text((W / 2 - 20, y0 + 51), s2, font=fnt, fill=(255, 255, 255, a_), anchor='ms'); img.alpha_composite(pl)
+        # 3. signature: divider, then a byline row
+        u = eo((t - 1.1) / 0.5)
+        if u > 0:
+            d = ImageDraw.Draw(img); half = 230 * u
+            dl = Image.new('RGBA', img.size, (0, 0, 0, 0)); ImageDraw.Draw(dl).line((W / 2 - 20 - half, 1324, W / 2 - 20 + half, 1324), fill=(255, 255, 255, 60), width=2); img.alpha_composite(dl)
+            hh = 124; hd = HEAD.resize((int(hh * HEAD.width / HEAD.height), hh), Image.LANCZOS)
+            nf = ImageFont.truetype(FD + 'SpaceGrotesk-Bold.ttf', 40); mf = ImageFont.truetype(FD + 'SpaceMono-Bold.ttf', 23)
+            nw = d.textlength('Dekel Factor Designs', font=nf); rw = d.textlength('OPEN TO PRODUCT DESIGN ROLES', font=mf) + 3 * 27
+            gap = 28; total = hd.width + gap + max(nw, rw); x0 = W / 2 - 20 - total / 2
+            if u < 1: hd.putalpha(hd.split()[3].point(lambda v: int(v * u)))
+            img.alpha_composite(hd, (int(x0), 1352))
+            tx([('Dekel Factor Designs', WH)], nf, x0 + hd.width + gap, 1408, 1.15, anchor='ls')
+            tx([('OPEN TO PRODUCT DESIGN ROLES', (255, 92, 104))], mf, x0 + hd.width + gap, 1450, 1.25, anchor='ls', ls=3)
     elif KIND == 'reels':
         text(img, 'Comment', font('InterDisplay-ExtraBold.otf', 84), W / 2, 820, (255, 255, 255), t, 0.15)
         text(img, 'JAM', font('InterDisplay-Black.otf', 330), W / 2, 1120, RED, t, 0.3, ls=-8)

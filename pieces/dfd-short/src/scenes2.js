@@ -1,3 +1,12 @@
+// ---- paper-me full body (assets/me-body-*.png): stands on a line at (cx, by), sways from the feet
+function meBody(name, cx, by, sc, o = {}) {
+  const img = asset(name); if (!img || sc <= 0.01) return;
+  const w = img.width * sc, h = img.height * sc, key = o.key ?? name;
+  ctx.save(); ctx.translate(cx, by); ctx.rotate(Math.sin(TT * TAU * 0.5 + key.length) * (o.sway ?? 0.025)); ctx.scale(o.pop ?? 1, o.pop ?? 1);
+  ctx.shadowColor = 'rgba(35,20,10,0.35)'; ctx.shadowBlur = 16; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 8;
+  ctx.drawImage(img, -w / 2, -h, w, h);
+  ctx.restore();
+}
 // ---- 3. the website: it assembles block by block; a cursor clicks; then everything holds
 const WIN = [90, 540, 900, 820];
 function sceneSite() {
@@ -75,7 +84,7 @@ function sceneLaunch() {
   for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, d = 200 + 50 * ev(CU.slam, 0.4); if (TT < CU.slam + 1.2) sparkle(SIGN[0] + Math.cos(a) * d, SIGN[1] + Math.sin(a) * d, 22, '#fff6c8'); }
   // the street and two passers-by turning to look
   cut(rect(-30, 1390, W + 60, 600, 0), PAL.grey, { key: 'pave', tear: 0, sy: -6, pat: pat.lines('rgba(255,255,255,0.18)', 80, 20) });
-  person(130, 1420, 0.72, { key: 'p1', mood: 'wow', shirt: PAL.purple, skin: PAL.skin1, hair: '#6b3e26' });
+  meBody('me-body-cheer.png', 135, 1935, 0.5, { key: 'cheer', sway: 0.03, pop: 1 + 0.06 * Math.exp(-(TT - CU.slam) * 8) * Math.cos((TT - CU.slam) * 24) });
   person(960, 1420, 0.72, { key: 'p2', mood: 'happy', shirt: PAL.green, skin: PAL.skin3, glasses: true });
   // confetti (no orange: that is the spark's)
   const RC = RNG('conf');
@@ -95,6 +104,7 @@ function sceneHome() {
   note(555, 640, 1, PAL.mint, 0.1, 'n2');
   markDisc(MARK[0], MARK[1] - 20, 190, 'home');
   me(MARK[0], MARK[1] - 20, 78, { rays: 8, mood: 'smile', key: 'hero' });
+  meBody('me-body-wave.png', 820, 1935, 0.5, { key: 'wave', sway: 0.035, pop: popS(18.2) });
   const f = () => tag('Dekel Factor Designs', 520, 1300, 66, { rot: -0.02, frac: ev(CU.title, 0.5) });
-  if (DEFER) DEFER.push(f); else f();
+  if (past(TT, CU.title)) { if (DEFER) DEFER.push(f); else f(); }
 }

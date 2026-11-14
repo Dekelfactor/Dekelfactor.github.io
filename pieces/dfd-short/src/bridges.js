@@ -3,7 +3,7 @@
 // =====================================================================
 const ERA_BG = ['#26315f', '#3f9f9a', '#f8c3d4', '#cfe2ee', '#f6cf55'];
 function pieceCam(era, t) {
-  if (era === 2) return push(t, TIMELINE.cues.hold, TIMELINE.cues.hold + 0.9, { z: 1.45, p: [880, 1300], to: [560, 1050] });   // the hold: in on the spark
+  if (era === 2) return push(t, TIMELINE.cues.hold, TIMELINE.cues.hold + 0.9, { z: 1.45, p: [520, 1320], to: [520, 1100] });   // the hold: in on the spark
   return null;
 }
 const BRIDGES = [

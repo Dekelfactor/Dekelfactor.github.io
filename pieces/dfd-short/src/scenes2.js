@@ -18,22 +18,21 @@ function sceneSite() {
   ink([[wx + 230, wy + 38], [wx + 420, wy + 38]], { w: 4, color: 'rgba(255,255,255,0.6)', amt: 0.6, key: 'addrl' });
   const pop = (t, f) => { const s = popS(t); if (s <= 0.01) return; f(s); };
   const at = (cx, cy, s, f) => { ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy); f(); ctx.restore(); };
-  // the real Open Stage page, assembled band by band (its header, its title, its signup form)
-  const img = asset('stage-wide.png'), k = ww / 1100, top = wy + 76;
-  const band = (t, y0, y1) => pop(t, (s) => at(540, top + (y0 + y1) / 2 * k, s, () => {
-    if (!img) return;
-    ctx.save(); ctx.shadowColor = 'rgba(35,20,10,0.28)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 6;
-    ctx.drawImage(img, 0, y0, 1100, y1 - y0, wx, top + y0 * k, ww, (y1 - y0) * k); ctx.restore();
+  // the real Open Stage Jam app at phone size: two paper phones (its landing screen, its home screen)
+  const phone = (cx, cy, name, t, key) => pop(t, (s) => at(cx, cy, s, () => {
+    cut(rect(cx - 165, cy - 345, 330, 690, 34), PAL.charcoal, { key: key + 'b', sb: 14, sy: 8 });
+    const im = asset(name); if (!im) return;
+    ctx.save(); ctx.beginPath(); ctx.roundRect(cx - 150, cy - 325, 300, 650, 20); ctx.clip();
+    ctx.drawImage(im, cx - 150, cy - 325, 300, 650); ctx.restore();
   }));
-  band(CU.nav, 0, 80);
-  band(CU.hero, 80, 395);
-  band(CU.cards, 395, 900);
-  // the click lands on the real "Singer" card
-  const TGT = [wx + 354 * k, top + 631 * k];
-  if (past(TT, CU.click) && TT < CU.click + 0.6) { ctx.strokeStyle = PAL.yellow; ctx.lineWidth = 6; ctx.strokeRect(wx + 262 * k, top + 580 * k, 184 * k, 103 * k); }
-  // the spark: a sticker on the window's corner
-  const SPK = [880, 1300];
-  if (past(TT, CU.hero)) { markDisc(SPK[0], SPK[1], 96 * popS(CU.hero), 'stk'); spark(SPK[0], SPK[1], 50 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' }); }
+  phone(310, 985, 'stage-mobile.png', CU.nav, 'ph1');
+  phone(730, 985, 'stage-mobile-2.png', CU.cards, 'ph2');
+  // the click lands on the real "View Event" button of the home screen
+  const TGT = [580 + 160 * 300 / 780, 660 + 1156 * 650 / 1688];
+  if (past(TT, CU.click) && TT < CU.click + 0.6) { ctx.strokeStyle = PAL.yellow; ctx.lineWidth = 6; ctx.beginPath(); ctx.roundRect(580 + 60 * 300 / 780, 660 + 1126 * 650 / 1688, 205 * 300 / 780, 62 * 650 / 1688, 14); ctx.stroke(); }
+  // the spark: a sticker between the phones
+  const SPK = [520, 1320];
+  if (past(TT, CU.hero)) { markDisc(SPK[0], SPK[1], 90 * popS(CU.hero), 'stk'); spark(SPK[0], SPK[1], 48 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' }); }
   // the cursor glides to the card and clicks
   if (past(TT, CU.lines)) {
     const cx = springTrack([[CU.lines, 960], [CU.button + 0.25, TGT[0]]], SPRING.smooth), cy = springTrack([[CU.lines, 1320], [CU.button + 0.25, TGT[1]]], SPRING.smooth);
@@ -41,7 +40,7 @@ function sceneSite() {
     cut([[cx, cy], [cx, cy + 74], [cx + 18, cy + 58], [cx + 32, cy + 90], [cx + 46, cy + 84], [cx + 32, cy + 52], [cx + 56, cy + 52]], '#ffffff', { key: 'cur', sb: 6, sy: 4, line: PAL.ink, lw: 4, tear: 0.4 });
   }
   stepTag('3 · build', E0 + 0.25);
-  cap('like Open Stage, a live jam app', E0 + 0.5);
+  cap('like Open Stage Jam, a live jam app', E0 + 0.5);
 }
 // ---- 4. launch: the mark on a shopfront, people turn, confetti
 const SIGN = [540, 690];
@@ -56,10 +55,10 @@ function sceneLaunch() {
   cut(rect(220, 1060, 640, 300, 6), PAL.navy, { key: 'shopw', pat: (bb) => { sparkle(bb.x0 + 120, bb.y0 + 80, 22, 'rgba(255,255,255,0.7)'); sparkle(bb.x1 - 140, bb.y0 + 190, 16, 'rgba(255,255,255,0.6)'); } });
   ink([[250, 1290], [830, 1290]], { w: 8, color: PAL.woodL, amt: 0.4, key: 'wshelf' });
   // a poster of the real Open Stage page taped in the window
-  const ph = asset('stage-phone.png');
+  const ph = asset('stage-mobile.png');
   ctx.save(); ctx.translate(430, 1205); ctx.rotate(-0.04);
   cut(rect(-150, -125, 300, 250, 3), PAL.paper, { key: 'poster', sb: 10, sy: 6 });
-  if (ph) ctx.drawImage(ph, 0, 0, 780, 640, -136, -112, 272, 223);
+  if (ph) ctx.drawImage(ph, 0, 260, 780, 640, -136, -112, 272, 223);
   cut(rect(-40, -140, 80, 30, 2), 'rgba(240,230,190,0.8)', { key: 'ptape', shadow: false, grain: 0.3, shade: false });
   ctx.restore();
   tag('jam tonight', 700, 1180, 40, { rot: 0.08, tape: false, fill: PAL.yellow });

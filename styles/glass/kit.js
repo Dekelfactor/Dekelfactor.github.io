@@ -104,6 +104,28 @@ function gxWorld(tint, o = {}) {
   ctx.restore();
 }
 
+
+// ---------------------------------------------------------------------
+//  A PHOTOGRAPHIC WORLD: one of the studio site's own 3D backdrops (an asset), cover-fit, with a slow push.
+//  o: zoom (1 = cover), focus [fx, fy] (0..1 in the image), blur (px), dark (0..1 overlay), dx/dy drift
+// ---------------------------------------------------------------------
+function gxPhoto(name, o = {}) {
+  const img = asset(name); ctx.save(); ctx.fillStyle = GX.ground; ctx.fillRect(-60, -60, W + 120, H + 120);
+  if (img) {
+    const k = Math.max(W / img.width, H / img.height) * (o.zoom ?? 1), w = img.width * k, h = img.height * k;
+    const [fx, fy] = o.focus ?? [0.5, 0.5];
+    const x = W * 0.5 - w * fx + (o.dx ?? 0), y = H * 0.5 - h * fy + (o.dy ?? 0);
+    if (o.blur) ctx.filter = `blur(${o.blur}px)`;
+    ctx.drawImage(img, Math.min(0, Math.max(W - w, x)), Math.min(0, Math.max(H - h, y)), w, h);
+    ctx.filter = 'none';
+  }
+  if (o.dark) { ctx.fillStyle = `rgba(5,5,7,${o.dark})`; ctx.fillRect(-60, -60, W + 120, H + 120); }
+  if (o.shade !== false) {   // keep the top and bottom quiet for type
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(5,5,7,0.55)'); g.addColorStop(0.22, 'rgba(5,5,7,0)'); g.addColorStop(0.62, 'rgba(5,5,7,0)'); g.addColorStop(1, 'rgba(5,5,7,0.75)');
+    ctx.fillStyle = g; ctx.fillRect(-60, -60, W + 120, H + 120);
+  }
+  ctx.restore();
+}
 // ---------------------------------------------------------------------
 //  GLASS PANELS: a real screen (an asset) floating in space. o: r (corner), tilt (-1..1, a slight skew for depth),
 //  glow (tint), s (scale), a (0..1 reveal: rises and un-blurs), crop [sx, sy, sw, sh] of the image.

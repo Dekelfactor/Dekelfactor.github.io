@@ -1,8 +1,35 @@
 {
   "name": "work-iso",
-  "title": "Dekel Factor Designs — the work (isometric)",
-  "format": { "width": 1080, "height": 1920, "fps": 24, "bpm": 120, "duration": 40.0, "frames": 960 },
+  "title": "Dekel Factor Designs \u2014 the work (isometric)",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "bpm": 120,
+    "duration": 40.0,
+    "frames": 960
+  },
   "storyFormat": "F2 morph chain",
   "style": "isometric",
-  "review": { "safe": { "top": 240, "bottom": 420, "right": 140 }, "refs": {} }
+  "review": {
+    "safe": {
+      "top": 240,
+      "bottom": 420,
+      "right": 140
+    },
+    "refs": {}
+  },
+  "build": [
+    "src/head.html",
+    "src/options.js",
+    "kit/core.js",
+    "style",
+    "src/scenes.js",
+    "src/bridges.js",
+    "kit/morph.js",
+    "kit/board.js",
+    "kit/score-head.js",
+    "src/score.js",
+    "kit/score-tail.js"
+  ]
 }

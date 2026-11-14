@@ -45,9 +45,8 @@ function stat(num, lab, x, y, tint, t) {
 //  1. INTRO — the ring in the dark, Paper-me inside it, the thesis
 // ---------------------------------------------------------------------
 function sceneIntro() {
-  gxWorld(GX.violet, { a: 0.16, key: 'intro', dust: 90 });
-  me(540, 860, 66, { mood: TT < 1.6 ? 'focus' : 'wow', key: 'heroI', glow: GX.violet });
-  gxRing(540, 860, 330, { tint: '#c9bcff', ry: 0.4 + TT * 0.45, rx: 0.95 });
+  gxPhoto('bg-intro.jpg', { zoom: 1.04 + TT * 0.012, focus: [0.52, 0.46] });
+  me(648, 830, 66, { mood: TT < 1.6 ? 'focus' : 'wow', key: 'heroI', glow: '#9fb4ff' });
   gxTitle(['I make complex', 'products feel', 'simple.'], 90, 1250, 104, { t: CU.thesis, accent: { simple: GX.violet } });
 }
 
@@ -55,7 +54,8 @@ function sceneIntro() {
 //  2. OPEN STAGE JAM — red world
 // ---------------------------------------------------------------------
 function sceneOSJ() {
-  gxWorld(GX.red, { a: 0.30, key: 'osj' });
+  const sharp = TT >= CU.o_prod - 1e-6;
+  gxPhoto('bg-osj.jpg', sharp ? { zoom: 1.02 + (TT - CU.o_prod) * 0.02, focus: [0.62, 0.55] } : { zoom: 1.15, blur: 22, dark: 0.45, focus: [0.5, 0.35] });
   label('01', 'Open Stage Jam', GX.red);
   // problem: the night's information scattered around Paper-me
   if (live(CU.o_prob, CU.o_res)) {
@@ -101,11 +101,8 @@ function sceneOSJ() {
   // the product: the real app on two phones, the ring circling behind
   if (TT >= CU.o_prod - 1e-6) {
     const u = inn(CU.o_prod, 0.7);
-    gxRing(540, 1000, 440, { tint: GX.red, rx: 1.35, ry: TT * 0.5, glow: true });
-    gxPhone('stage-mobile.png', 360 + flo(4, 8), 990 + (1 - u) * 500, 860, { rot: -0.07, glow: GX.red, s: u });
-    gxPhone('stage-mobile-2.png', 730 + flo(5, 8), 1030 + (1 - u) * 640, 860, { rot: 0.06, glow: GX.red, s: u });
     gxChip("You're next.", CX, 1440, 46, { s: popS(CU.o_prod + 0.9), fill: gxRGBA(GX.red, 0.85), line: 'rgba(255,255,255,0.4)' });
-    me(900, 600, 56, { mood: 'laugh', key: 'heroO', s: popS(CU.o_prod + 0.5) });
+    me(190, 1200, 60, { mood: 'laugh', key: 'heroO', s: popS(CU.o_prod + 0.5), glow: GX.red });
   }
 }
 
@@ -114,7 +111,8 @@ function sceneOSJ() {
 // ---------------------------------------------------------------------
 function sceneSeason() {
   const hold = TT >= CU.hold - 1e-6; if (hold) TT = CU.hold;   // the hold: everything stops
-  gxWorld(GX.amber, { a: 0.28, key: 'season' });
+  const sharp = TT >= CU.s_prod - 1e-6;
+  gxPhoto(sharp ? 'bg-season2.jpg' : 'bg-season.jpg', sharp ? { zoom: 1.2 + (TT - CU.s_prod) * 0.02, focus: [0.62, 0.6] } : { zoom: 1.15, blur: 22, dark: 0.45 });
   label('02', 'Season', GX.amber);
   if (live(CU.s_prob, CU.s_res)) {
     const v = out(CU.s_res - 0.35); ctx.save(); ctx.translate(0, -v * 300);
@@ -154,11 +152,8 @@ function sceneSeason() {
   }
   if (TT >= CU.s_prod - 1e-6) {
     const u = inn(CU.s_prod, 0.7);
-    gxPanel('season-product.jpg', 60 + flo(7, 6), 600 + (1 - u) * 400, 960, 598, { s: u, glow: GX.amber, r: 28 });
-    gxPhone('season-phone.jpg', 800 + flo(8, 8), 1180 + (1 - u) * 600, 600, { rot: 0.06, glow: GX.amber, s: u });
-    gxChip('The fitting room', 300, 1300, 44, { s: popS(CU.s_prod + 0.8) });
-    if (hold) gxRing(540, 1000, 520, { tint: GX.amber, rx: 1.2, ry: 1.0, glow: true });
-    me(220, 1450, 54, { mood: hold ? 'wow' : 'laugh', key: 'heroS', s: popS(CU.s_prod + 0.5) });
+    gxChip('The fitting room', CX, 1440, 46, { s: popS(CU.s_prod + 0.8) });
+    me(880, 1250, 58, { mood: hold ? 'wow' : 'laugh', key: 'heroS', s: popS(CU.s_prod + 0.5), glow: GX.amber });
   }
 }
 
@@ -166,12 +161,11 @@ function sceneSeason() {
 //  4. PAYOFF — the ring, the work orbiting it, Paper-me waving, the name
 // ---------------------------------------------------------------------
 function scenePayoff() {
-  gxWorld(GX.violet, { a: 0.20, key: 'pay', glow: [540, 820, 900] });
+  gxPhoto('bg-payoff.jpg', { zoom: 1.03 + (TT - CU.slam) * 0.015, focus: [0.47, 0.45] });
   const items = [['stage-mobile.png', 'p'], ['season-phone.jpg', 'p'], ['osj-flow.jpg', 'c'], ['season-product.jpg', 'c']];
-  const pts = items.map((it, i) => { const a = i / items.length * TAU + TT * 0.5; return [it, a, 540 + Math.cos(a) * 400, 820 + Math.sin(a) * 150, Math.sin(a)]; });
+  const pts = items.map((it, i) => { const a = i / items.length * TAU + TT * 0.5; return [it, a, 520 + Math.cos(a) * 410, 860 + Math.sin(a) * 160, Math.sin(a)]; });
   const draw = (q) => { const [[nm, kind], a, x, y, z] = q, s = 0.75 + 0.25 * z; if (kind === 'p') gxPhone(nm, x, y, 330 * s, { s: 1, glow: GX.violet }); else gxPanel(nm, x - 150 * s, y - 100 * s, 300 * s, 200 * s, { r: 16, glow: GX.violet }); };
   pts.filter((q) => q[4] < 0).forEach(draw);
-  gxRing(540, 820, 300, { tint: '#c9bcff', ry: TT * 0.6, rx: 1.3 });
   pts.filter((q) => q[4] >= 0).forEach(draw);
   meBody('me-body-wave.png', 850, 1935, 0.5, { glow: GX.violet });
   gxTitle(['Dekel Factor', 'Designs'], 90, 1230, 112, { t: CU.name, accent: { Designs: GX.violet } });

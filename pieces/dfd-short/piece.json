@@ -1,0 +1,26 @@
+{
+  "name": "dfd-short",
+  "title": "Dekel Factor Designs",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "bpm": 120,
+    "duration": 20.0,
+    "frames": 480
+  },
+  "storyFormat": "F2 morph chain",
+  "style": "cut-paper",
+  "review": {
+    "safe": {
+      "top": 240,
+      "bottom": 420,
+      "right": 140
+    },
+    "refs": {}
+  },
+  "scenes": [
+    "src/scenes.js",
+    "src/scenes2.js"
+  ]
+}

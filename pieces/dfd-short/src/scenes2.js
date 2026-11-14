@@ -1,0 +1,112 @@
+// ---- 3. the website: it assembles block by block; a cursor clicks; then everything holds
+const WIN = [90, 540, 900, 820];
+function sceneSite() {
+  cut(rect(-30, -30, W + 60, H + 60, 0), PAL.pinkL, { key: 'wallS', shadow: false, tear: 0, shade: false, pat: pat.dots('rgba(255,255,255,0.35)', 6, 56) });
+  // bunting across the top
+  ink([[-20, 430], [300, 470], [700, 465], [1100, 425]], { w: 3, color: PAL.ink, amt: 0.6, key: 'bstr' });
+  for (let i = 0; i < 9; i++) { const x = 40 + i * 120, y = 430 + Math.sin((x + 20) / 1100 * Math.PI) * 40, sw = Math.sin(TT * 3 + i) * 4; cut([[x - 34, y], [x + 34, y], [x + sw, y + 70]], [PAL.teal, PAL.yellow, PAL.purple, PAL.blue][i % 4], { key: 'flag' + i, sb: 4, sy: 3 }); }
+  // a shelf strip below: plant and mug
+  cut(rect(-30, 1380, W + 60, 600, 0), PAL.wood, { key: 'deskS', tear: 0, sy: -6, pat: pat.grainWood('rgba(120,60,20,0.18)') });
+  plant(110, 1400, 0.62, PAL.teal, 'plS');
+  mug(900, 1300, 0.85, PAL.blue, 'mugS');
+  // the browser window
+  const [wx, wy, ww, wh] = WIN;
+  cut(rect(wx, wy, ww, wh, 10), PAL.paper, { key: 'brw', sb: 18, sy: 12 });
+  cut(rect(wx, wy, ww, 76, 10), PAL.navy, { key: 'bar', shadow: false, tear: 0.6 });
+  [PAL.pink, PAL.yellow, PAL.mint].forEach((c, i) => dot(wx + 40 + i * 34, wy + 38, 11, c));
+  cut(rect(wx + 200, wy + 18, 520, 40, 18), '#3a4680', { key: 'addr', shadow: false, grain: 0.3 });
+  ink([[wx + 230, wy + 38], [wx + 420, wy + 38]], { w: 4, color: 'rgba(255,255,255,0.6)', amt: 0.6, key: 'addrl' });
+  const pop = (t, f) => { const s = popS(t); if (s <= 0.01) return; f(s); };
+  const at = (cx, cy, s, f) => { ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy); f(); ctx.restore(); };
+  // nav
+  pop(CU.nav, (s) => at(540, 640, s, () => {
+    markDisc(wx + 60, 640, 26, 'navm');
+    [0, 1, 2, 3].forEach((i) => ink([[wx + 420 + i * 120, 640], [wx + 500 + i * 120, 640]], { w: 6, color: PAL.ink, amt: 0.6, key: 'nav' + i }));
+  }));
+  // hero block: the mark and a headline
+  const HB = [wx + 40, 700, ww - 80, 320];
+  pop(CU.hero, (s) => at(540, 860, s, () => {
+    cut(rect(...HB, 8), PAL.sky, { key: 'hb', sb: 8, sy: 5, pat: pat.stripes('rgba(255,255,255,0.25)', 10, 40, 0.5) });
+    markDisc(330, 860, 112, 'hbm');
+    handText('Hello!', 490, 830, 72, PAL.ink, { key: 'hello' });
+    ink([[490, 880], [800, 880]], { w: 6, color: 'rgba(42,29,24,0.5)', frac: ev(CU.lines, 0.3), key: 'hl1' });
+    ink([[490, 912], [720, 912]], { w: 6, color: 'rgba(42,29,24,0.5)', frac: ev(CU.lines + 0.15, 0.3), key: 'hl2' });
+  }));
+  // the button: pops, then the click squishes it
+  const clickK = past(TT, CU.click) ? 1 - 0.1 * Math.exp(-(TT - CU.click) * 10) * Math.cos((TT - CU.click) * 30) : 1;
+  pop(CU.button, (s) => at(640, 975, s * clickK, () => {
+    cut(rect(540, 945, 200, 60, 28), past(TT, CU.click) ? PAL.green : PAL.teal, { key: 'btn', sb: 6, sy: 5 });
+    handText('say hi', 582, 988, 36, '#ffffff', { key: 'btnt' });
+  }));
+  // three cards
+  [PAL.pink, PAL.purple, PAL.green].forEach((c, i) => pop(CU.cards + i * 0.25, (s) => at(wx + 170 + i * 280, 1190, s, () => {
+    cut(rect(wx + 40 + i * 280, 1060, 260, 260, 8), c, { key: 'card' + i, sb: 8, sy: 5 });
+    const cx = wx + 170 + i * 280;
+    if (i === 0) cut(ellipsePts(cx, 1150, 50, 50, 0, 24), PAL.paper, { key: 'ic0', sb: 4 });
+    if (i === 1) cut([[cx - 55, 1195], [cx, 1100], [cx + 55, 1195]], PAL.paper, { key: 'ic1', sb: 4 });
+    if (i === 2) cut(rect(cx - 48, 1102, 96, 96, 6), PAL.paper, { key: 'ic2', sb: 4 });
+    ink([[cx - 90, 1255], [cx + 70, 1255]], { w: 6, color: 'rgba(255,255,255,0.8)', amt: 0.6, key: 'cl' + i });
+    ink([[cx - 90, 1285], [cx + 20, 1285]], { w: 6, color: 'rgba(255,255,255,0.8)', amt: 0.6, key: 'cm' + i });
+  })));
+  // the spark rides on the mark in the hero block
+  if (past(TT, CU.hero)) spark(330, 860, 58 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' });
+  // the cursor glides to the button and clicks
+  if (past(TT, CU.lines)) {
+    const cx = springTrack([[CU.lines, 960], [CU.button + 0.25, 700]], SPRING.smooth), cy = springTrack([[CU.lines, 1320], [CU.button + 0.25, 990]], SPRING.smooth);
+    if (past(TT, CU.click) && TT < CU.click + 0.5) for (let i = 0; i < 6; i++) { const a = i / 6 * TAU, d = 40 + 60 * ev(CU.click, 0.3); sparkle(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 14); }
+    cut([[cx, cy], [cx, cy + 74], [cx + 18, cy + 58], [cx + 32, cy + 90], [cx + 46, cy + 84], [cx + 32, cy + 52], [cx + 56, cy + 52]], '#ffffff', { key: 'cur', sb: 6, sy: 4, line: PAL.ink, lw: 4, tear: 0.4 });
+  }
+  stepTag('3 · build', E0 + 0.25);
+  cap('and give it a home online', E0 + 0.5);
+}
+// ---- 4. launch: the mark on a shopfront, people turn, confetti
+const SIGN = [540, 690];
+function sceneLaunch() {
+  cut(rect(-30, -30, W + 60, H + 60, 0), PAL.sky, { key: 'wallL', shadow: false, tear: 0, shade: false, pat: pat.stripes('rgba(255,255,255,0.15)', 40, 120) });
+  [[160, 470], [880, 520]].forEach(([x, y], i) => cut(ellipsePts(x + Math.sin(TT + i) * 12, y, 90, 34, 0, 20), '#ffffff', { key: 'cloud' + i, sb: 6 }));
+  // a wire with birds
+  ink([[520, 300], [800, 340], [1100, 320]], { w: 3, color: PAL.ink, amt: 0.5, key: 'wire' });
+  [[640, 312], [720, 324], [800, 330]].forEach(([x, y], i) => { cut(ellipsePts(x, y - 18, 24, 20, 0, 16), PAL.navy, { key: 'bird' + i, sb: 4 }); dot(x + 8, y - 24, 3, '#ffffff'); cut([[x + 20, y - 20], [x + 34, y - 16], [x + 20, y - 12]], PAL.mustard, { key: 'bk' + i, shadow: false }); });
+  // the shopfront
+  cut(rect(150, 560, 780, 840, 6), PAL.brick, { key: 'shop', pat: pat.lines('rgba(90,40,30,0.18)', 34, 10) });
+  cut(rect(220, 1060, 640, 300, 6), PAL.navy, { key: 'shopw', pat: (bb) => { sparkle(bb.x0 + 120, bb.y0 + 80, 22, 'rgba(255,255,255,0.7)'); sparkle(bb.x1 - 140, bb.y0 + 190, 16, 'rgba(255,255,255,0.6)'); } });
+  ink([[250, 1290], [830, 1290]], { w: 8, color: PAL.woodL, amt: 0.4, key: 'wshelf' });
+  [[330, PAL.paper], [460, PAL.pinkL], [590, PAL.mint]].forEach(([x, c], i) => { cut(rect(x - 46, 1170, 92, 120, 6), c, { key: 'merch' + i, sb: 5, sy: 4 }); markDisc(x, 1222, 30, 'mm' + i); });
+  tag('open', 740, 1140, 44, { rot: 0.08, tape: false, fill: PAL.yellow });
+  cut(rect(120, 900, 840, 110, 6), PAL.teal, { key: 'awn', pat: pat.stripes('rgba(255,255,255,0.85)', 50, 100) });
+  for (let i = 0; i < 8; i++) cut(ellipsePts(172 + i * 105, 1010, 53, 30, 0, 18, 0, Math.PI), i % 2 ? '#ffffff' : PAL.teal, { key: 'sc' + i, sb: 4 });
+  // the sign: hung from a bracket, lands with a bounce on the cut
+  ink([[SIGN[0] - 90, 520], [SIGN[0] - 90, 560]], { w: 6, color: PAL.ink, amt: 0.3, key: 'ch1' });
+  ink([[SIGN[0] + 90, 520], [SIGN[0] + 90, 560]], { w: 6, color: PAL.ink, amt: 0.3, key: 'ch2' });
+  const b = 1 + 0.1 * Math.exp(-(TT - CU.slam) * 7) * Math.cos((TT - CU.slam) * 22);
+  ctx.save(); ctx.translate(SIGN[0], SIGN[1]); ctx.scale(b, b); ctx.translate(-SIGN[0], -SIGN[1]);
+  markDisc(SIGN[0], SIGN[1], 150, 'sign');
+  spark(SIGN[0], SIGN[1], 66, { rays: 8, mood: 'happy', key: 'hero' });
+  ctx.restore();
+  for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, d = 200 + 50 * ev(CU.slam, 0.4); if (TT < CU.slam + 1.2) sparkle(SIGN[0] + Math.cos(a) * d, SIGN[1] + Math.sin(a) * d, 22, '#fff6c8'); }
+  // the street and two passers-by turning to look
+  cut(rect(-30, 1390, W + 60, 600, 0), PAL.grey, { key: 'pave', tear: 0, sy: -6, pat: pat.lines('rgba(255,255,255,0.18)', 80, 20) });
+  person(130, 1420, 0.72, { key: 'p1', mood: 'wow', shirt: PAL.purple, skin: PAL.skin1, hair: '#6b3e26' });
+  person(960, 1420, 0.72, { key: 'p2', mood: 'happy', shirt: PAL.green, skin: PAL.skin3, glasses: true });
+  // confetti (no orange: that is the spark's)
+  const RC = RNG('conf');
+  for (let i = 0; i < 70; i++) {
+    const x0 = RC.r(0, W), y0 = RC.r(-900, 200), v = RC.r(380, 620), c = [PAL.pink, PAL.teal, PAL.yellow, PAL.purple, PAL.blue, PAL.mint][i % 6], sp = RC.r(2, 6);
+    const y = y0 + (TT - CU.slam) * v, x = x0 + Math.sin(TT * sp + i) * 30;
+    if (y < -40 || y > H + 40) continue;
+    cut(rot(rect(x - 12, y - 7, 24, 14, 2), x, y, TT * sp + i), c, { key: 'cf' + i, sb: 3, sy: 2, grain: false, tear: 0.3 });
+  }
+  stepTag('4 · launch', CU.slam);
+  cap('out into the world', CU.slam + 0.25);
+}
+// ---- 5. morning desk: the same sheet, now with the finished mark and the studio's name
+function sceneHome() {
+  desk(true);
+  note(540, 470, 1, PAL.pinkL, -0.12, 'n1');
+  note(555, 640, 1, PAL.mint, 0.1, 'n2');
+  markDisc(MARK[0], MARK[1] - 20, 190, 'home');
+  spark(MARK[0], MARK[1] - 20, 78, { rays: 8, mood: 'happy', key: 'hero' });
+  const f = () => tag('Dekel Factor Designs', 520, 1300, 66, { rot: -0.02, frac: ev(CU.title, 0.7) });
+  if (DEFER) DEFER.push(f); else f();
+  cap('ideas, made by hand', CU.title + 0.6);
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dekel Factor Designs</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1b1714; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { height: min(100vh, calc(100vw * 16 / 9)); width: auto; aspect-ratio: 9 / 16; display: block; cursor: pointer; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+"use strict";
+// =====================================================================
+//  DEKEL FACTOR DESIGNS — 9:16, 20.0s @ 120 BPM, 24fps. A morph chain: an idea (the spark) is sketched,
+//  cut into a mark, given a website, launched on a street, and ends back on the desk as the studio's mark.
+//  Device: the spark gains a ray at every step (4 asleep -> 5 -> 6 -> 7 -> 8).
+//  Build: node <skill>/tools/build.mjs <this piece dir>. Open index.html (click to hear; ?t=2.5 freezes a frame).
+// =====================================================================
+const FPS = 24, W = 1080, H = 1920;
+const BPM = 120, BEAT = 60 / BPM, E8 = BEAT / 2, E16 = BEAT / 4;
+const DURATION = 20.0;
+const NFRAMES = Math.round(DURATION * FPS);
+const LOOP_T = NFRAMES / FPS;
+const SAFE = { top: 240, bottom: 420, right: 140 };
+const HAND = '"Ink Free", "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", "Comic Neue", cursive';
+const CX = 470;
+
+// eras: [t0, t1, scene]. 6.0, 10.5 and 18.0 morph; 15.5 is the one hard cut (the payoff).
+const ERA_LIST = [
+  [0, 6.0, () => sceneSketch()],
+  [6.0, 10.5, () => sceneCut()],
+  [10.5, 15.5, () => sceneSite()],
+  [15.5, 18.0, () => sceneLaunch()],
+  [18.0, 20.0, () => sceneHome()],
+];
+const SHOTS = [
+  //  key       era  t0    t1    title
+  ['sketch',   0,   0.0,  6.0,  'night desk; the spark wakes and is sketched'],
+  ['cut',      1,   6.0,  10.5, 'the sketch becomes a paper badge, cut out'],
+  ['site',     2,   10.5, 15.5, 'the badge becomes a website; hold before the launch'],
+  ['launch',   3,   15.5, 18.0, 'the mark on a shopfront; people turn; confetti'],
+  ['home',     4,   18.0, 20.0, 'back at the desk in the morning; the studio name'],
+];
+const TIMELINE = {
+  width: W, height: H, fps: FPS, bpm: BPM, duration: DURATION, frames: NFRAMES, loop: LOOP_T, safe: SAFE,
+  format: 'morph-chain',
+  shots: SHOTS.map(([key, era, t0, t1, title], i) => ({ id: i + 1, key, era, t0, t1, title })),
+  cuts: [15.5],
+  morphs: [6.0, 10.5, 18.0],
+  cues: {
+    lamp: 1.5, sketch0: 2.0, sketch1: 4.0, notes: 2.5, ray5: 4.25,
+    snip0: 6.75, snip1: 9.0, lift: 9.5,
+    nav: 11.0, hero: 11.5, cards: 12.0, lines: 12.75, button: 13.0, click: 13.75, hold: 14.5,
+    slam: 15.5, title: 18.5,
+  },
+  acts: [
+    { name: '1 Sketch',  role: 'build',   t0: 0.0,  t1: 6.0 },
+    { name: '2 Cut',     role: 'journey', t0: 6.0,  t1: 10.5 },
+    { name: '3 Build',   role: 'peak',    t0: 10.5, t1: 14.5 },
+    { name: '4 Hold',    role: 'silence', t0: 14.5, t1: 15.5 },
+    { name: '5 Launch',  role: 'gift',    t0: 15.5, t1: 18.0 },
+    { name: '6 Home',    role: 'goodbye', t0: 18.0, t1: 20.0 },
+  ],
+  board: [
+    { t: 0.75, title: 'asleep on a blank sheet', sound: 'near silence; room tone', next: 'the lamp clicks on' },
+    { t: 3.5, title: 'the sketch', sound: 'soft pad; the spark motif; pencil scratch', next: 'the circle becomes a badge' },
+    { t: 8.0, title: 'cut into a mark', sound: 'plucks; snips on the beat', next: 'the badge becomes a browser' },
+    { t: 13.9, title: 'a home online', sound: 'the fullest groove', next: 'hold' },
+    { t: 15.0, title: 'hold', sound: 'silence', next: 'hard cut' },
+    { t: 16.5, title: 'launch', sound: 'the loudest hit: stab + sub', next: 'the sign becomes the sheet' },
+    { t: 19.5, title: 'Dekel Factor Designs', sound: 'a warm flat chord, fading', next: 'loops' },
+  ],
+  narration: [],
+};
+window.TIMELINE = TIMELINE;

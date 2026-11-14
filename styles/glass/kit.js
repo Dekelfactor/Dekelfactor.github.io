@@ -126,6 +126,37 @@ function gxPhoto(name, o = {}) {
   }
   ctx.restore();
 }
+
+// ---------------------------------------------------------------------
+//  A PANEL IN PERSPECTIVE: an image on a card rotated about its vertical axis (ry, radians) and set back in depth
+//  (z: 0 = the screen plane, >0 farther). Drawn in thin vertical strips scaled by depth: a true perspective
+//  trapezoid. o: crop [sx, sy, sw, sh], glow (hex), blur (px, depth of field), focal (px)
+// ---------------------------------------------------------------------
+function gxPanelP(name, cx, cy, w, h, o = {}) {
+  const img = asset(name); if (!img) return;
+  const ry = o.ry ?? 0, z = o.z ?? 0, f = o.focal ?? 1400, N = 36, c = o.crop ?? [0, 0, img.width, img.height];
+  const pt = (u) => { const x = u * Math.cos(ry), zz = u * Math.sin(ry) + z, k = f / (f + zz); return [cx + x * k, k]; };
+  const L = pt(-w / 2), R = pt(w / 2);
+  const quad = [[L[0], cy - h / 2 * L[1]], [R[0], cy - h / 2 * R[1]], [R[0], cy + h / 2 * R[1]], [L[0], cy + h / 2 * L[1]]];
+  if (Math.abs(R[0] - L[0]) < 2) return;
+  ctx.save();
+  if (o.blur) ctx.filter = `blur(${o.blur.toFixed(1)}px)`;
+  ctx.shadowColor = o.glow ? gxRGBA(o.glow, 0.5) : 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 70 * L[1]; ctx.shadowOffsetY = o.glow ? 0 : 24;
+  ctx.fillStyle = '#0c0c10'; ctx.beginPath(); quad.forEach((q, i) => (i ? ctx.lineTo(...q) : ctx.moveTo(...q))); ctx.closePath(); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  for (let i = 0; i < N; i++) {
+    const a = pt(-w / 2 + w * i / N), b = pt(-w / 2 + w * (i + 1) / N), k = (a[1] + b[1]) / 2, x0 = Math.min(a[0], b[0]), x1 = Math.max(a[0], b[0]);
+    ctx.drawImage(img, c[0] + c[2] * i / N, c[1], c[2] / N + 0.5, c[3], x0 - 0.3, cy - h / 2 * k, x1 - x0 + 0.6, h * k);
+  }
+  // sheen and rim
+  const g = ctx.createLinearGradient(L[0], cy - h / 2, R[0], cy + h / 2); g.addColorStop(0, 'rgba(255,255,255,0.10)'); g.addColorStop(0.4, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0.04)');
+  ctx.fillStyle = g; ctx.beginPath(); quad.forEach((q, i) => (i ? ctx.lineTo(...q) : ctx.moveTo(...q))); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+}
+// a fly-in from depth: progress u (0 far, 1 placed) -> { z, ry, blur } ; and a fly-past toward the camera
+const gxFly = (u, ry0 = 0.9) => ({ z: (1 - u) * 2600, ry: (1 - u) * ry0, blur: (1 - u) * 14 });
+const gxPast = (v) => ({ z: -v * 900, blur: v * 18 });
 // ---------------------------------------------------------------------
 //  GLASS PANELS: a real screen (an asset) floating in space. o: r (corner), tilt (-1..1, a slight skew for depth),
 //  glow (tint), s (scale), a (0..1 reveal: rises and un-blurs), crop [sx, sy, sw, sh] of the image.

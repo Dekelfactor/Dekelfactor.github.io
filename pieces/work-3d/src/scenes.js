@@ -51,109 +51,104 @@ function sceneIntro() {
 }
 
 // ---------------------------------------------------------------------
-//  2. OPEN STAGE JAM — red world
+//  DEPTH: each beat is a layer that flies in from far away (small, out of focus), settles, then flies past the camera.
+//  beat(t0, t1, cx, cy, fn): fn draws the beat in place; the layer scales about (cx, cy) and blurs with depth.
+// ---------------------------------------------------------------------
+function beat(t0, t1, cx, cy, fn, o = {}) {
+  if (TT < t0 - 1e-6 || TT >= t1 + 0.01) return;
+  const u = EZ.o3(clamp((TT - t0) / (o.din ?? 0.75))), v = o.last ? 0 : EZ.i2(clamp((TT - (t1 - 0.4)) / 0.4));
+  const s = (0.45 + 0.55 * u) * (1 + 1.6 * v), bl = (1 - u) * 12 + v * 16;
+  if (v >= 0.999) return;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy);
+  if (bl > 0.3) ctx.filter = `blur(${bl.toFixed(1)}px)`;
+  fn(u, v);
+  ctx.restore();
+}
+// the camera travelling through a world: the backdrop pans and pushes a little on every beat (parallax)
+const travel = (cues) => ({ dy: springTrack(cues.map((t, i) => [t, -i * 70]), SPRING.heavy), zoom: springTrack(cues.map((t, i) => [t, 1.18 + i * 0.03]), SPRING.heavy), dx: Math.sin(TT * 0.25) * 30 });
+
+// ---------------------------------------------------------------------
+//  2. OPEN STAGE JAM — the red stage: blurred behind the story, sharp for the product
 // ---------------------------------------------------------------------
 function sceneOSJ() {
   const sharp = TT >= CU.o_prod - 1e-6;
-  gxPhoto('bg-osj.jpg', sharp ? { zoom: 1.02 + (TT - CU.o_prod) * 0.02, focus: [0.62, 0.55] } : { zoom: 1.15, blur: 22, dark: 0.45, focus: [0.5, 0.35] });
+  if (sharp) gxPhoto('bg-osj.jpg', { zoom: 1.05 + (TT - CU.o_prod) * 0.035, focus: [0.62, 0.55], dx: -(TT - CU.o_prod) * 18 });
+  else { const c = travel([E0, CU.o_res, CU.o_per, CU.o_flow]); gxPhoto('bg-osj.jpg', { zoom: c.zoom, blur: 22, dark: 0.42, focus: [0.5, 0.35], dy: c.dy, dx: c.dx }); }
   label('01', 'Open Stage Jam', GX.red);
-  // problem: the night's information scattered around Paper-me
-  if (live(CU.o_prob, CU.o_res)) {
-    const u = inn(CU.o_prob), v = out(CU.o_res - 0.35);
-    ctx.save(); ctx.translate(0, -v * 300);
+  // problem
+  beat(CU.o_prob, CU.o_res, 540, 1000, () => {
     gxTitle(["Getting on stage", "shouldn't be", 'this hard.'], 90, 560, 104, { t: CU.o_prob, accent: { hard: GX.red } });
-    const bits = ['venue post?', 'group chat', 'am I on?', 'start time?', "who's next?", 'sign-up sheet'];
-    bits.forEach((s, i) => { const a = i / bits.length * TAU + TT * 0.35, R = 300 + (i % 2) * 70; gxChip(s, 540 + Math.cos(a) * R, 1120 + Math.sin(a) * R * 0.55, 34, { s: popS(CU.o_prob + 0.4 + i * 0.12) * (1 - v) }); });
-    me(540, 1110, 70, { mood: 'wow', key: 'heroO', s: 1 - v, glow: GX.red });
-    ctx.restore();
-  }
-  // research: six years, about thirty conversations
-  if (live(CU.o_res, CU.o_per)) {
-    const v = out(CU.o_per - 0.3); ctx.save(); ctx.translate(-v * 900, 0);
-    gxEyebrow('Research', 90, 560, GX.red, CU.o_res);
-    stat('6', 'years of jam nights', 90, 900, GX.red, CU.o_res + 0.1);
-    stat('~30', 'conversations', 90, 1230, GX.ink, CU.o_res + 1.1);
+    ['am I on?', 'start time?', "who's next?"].forEach((t, i) => { const a = i / 3 * TAU + TT * 0.45, R = 310; gxChip(t, 540 + Math.cos(a) * R, 1130 + Math.sin(a) * R * 0.5, 36, { s: popS(CU.o_prob + 0.4 + i * 0.15) }); });
+    me(540, 1120, 74, { mood: 'wow', key: 'heroO', glow: GX.red });
+  });
+  // research
+  beat(CU.o_res, CU.o_per, 540, 1000, () => {
+    stat('6', 'years of jam nights', 90, 860, GX.red, CU.o_res + 0.1);
+    stat('~30', 'conversations', 90, 1180, GX.ink, CU.o_res + 0.9);
     me(860, 1380, 56, { mood: 'smile', key: 'heroO', s: popS(CU.o_res + 0.3) });
-    ctx.restore();
+  });
+  // Alex: the photo swings in on a 3D turn, the quote beside it; then the before / after line
+  if (TT >= CU.o_per - 1e-6 && TT < CU.o_flow + 0.01) {
+    const u = EZ.o3(clamp((TT - CU.o_per) / 0.9)), v = EZ.i2(clamp((TT - (CU.o_flow - 0.4)) / 0.4)), st = EZ.o3(clamp((TT - CU.o_story) / 0.8));
+    const F1 = gxFly(u, 1.0), P = gxPast(v);
+    gxPanelP('osj-alex.jpg', 700, 760 - st * 120, 500, 735, { z: F1.z + P.z + st * 500, ry: -0.35 + F1.ry + TT * 0.01, blur: F1.blur + P.blur + st * 4, glow: GX.red });
+    gxPanelP('osj-persona.jpg', 360, 860 - st * 150, 640, 270, { crop: [30, 20, 740, 320], z: F1.z * 1.2 + P.z + st * 300, ry: 0.28 + F1.ry * 0.8, blur: F1.blur + P.blur, glow: GX.red });
+    if (st > 0) { const F2 = gxFly(st, -0.8); gxPanelP('osj-story.jpg', 540, 1250, 960, 131, { crop: [0, 0, 1100, 150], z: F2.z + P.z, ry: F2.ry, blur: F2.blur + P.blur, glow: GX.red }); }
+    me(930, 1430, 54, { mood: TT < CU.o_story + 0.6 ? 'smile' : 'happy', key: 'heroO', s: u * (1 - v) });
   }
-  // persona and before/after: the real case-study panels
-  if (live(CU.o_per, CU.o_flow)) {
-    const u = inn(CU.o_per), v = out(CU.o_flow - 0.35), st = inn(CU.o_story, 0.7);
-    ctx.save(); ctx.translate(0, -v * 1200);
-    gxPanel('osj-alex.jpg', 560 + flo(1, 6), 420 + (1 - u) * 200, 440, 646, { s: u, glow: GX.red, r: 30 });
-    gxPanel('osj-persona.jpg', 70 + flo(2, 6), 470 + (1 - u) * 260 - st * 120, 600, 808, { s: u, tilt: -0.4, r: 30 });
-    gxPanel('osj-story.jpg', 60, 1000 + (1 - st) * 700 + flo(3, 5), 960, 400, { s: st, r: 24, glow: GX.red });
-    me(930, 1430, 52, { mood: TT < CU.o_story + 0.6 ? 'smile' : 'happy', key: 'heroO', s: u });
-    ctx.restore();
+  // the flow: the camera glides down the real flow, tilted in depth
+  if (TT >= CU.o_flow - 1e-6 && TT < CU.o_prod + 0.01) {
+    const u = EZ.o3(clamp((TT - CU.o_flow) / 0.8)), v = EZ.i2(clamp((TT - (CU.o_prod - 0.4)) / 0.4)), F = gxFly(u, 0.7), P = gxPast(v);
+    const pan = EZ.io(clamp((TT - CU.o_flow - 0.4) / 2.4)), img = asset('osj-flow.jpg');
+    if (img) { const ch = img.width * 1.25; gxPanelP('osj-flow.jpg', 560, 1060, 720, 880, { crop: [0, pan * (img.height - ch), img.width, ch], z: F.z + P.z, ry: 0.22 + F.ry, blur: F.blur + P.blur, glow: GX.red }); }
+    beat(CU.o_flow, CU.o_prod, 540, 500, () => gxTitle(['Two roles,', 'one live line.'], 90, 430, 92, { t: CU.o_flow, accent: { live: GX.red } }));
+    me(170, 1300, 58, { mood: 'wow', key: 'heroO', s: popS(CU.o_flow + 0.4) * (1 - v) });
   }
-  // the flow: two roles, one live line — revealed down the line
-  if (live(CU.o_flow, CU.o_prod)) {
-    const v = out(CU.o_prod - 0.3), rev = EZ.io(clamp((TT - CU.o_flow - 0.3) / 2.0));
-    ctx.save(); ctx.translate(0, -v * 1300);
-    gxTitle(['Two roles,', 'one live line.'], 90, 470, 92, { t: CU.o_flow, accent: { live: GX.red } });
-    const fx = 300, fy = 600, fw = 600, fh = 980 * 0.92;
-    ctx.save(); ctx.beginPath(); ctx.rect(fx - 40, fy - 40, fw + 80, 40 + fh * rev + 40); ctx.clip();
-    gxPanel('osj-flow.jpg', fx, fy, fw, fh, { r: 28, glow: GX.red });
-    ctx.restore();
-    me(190, 1150, 56, { mood: 'wow', key: 'heroO', s: popS(CU.o_flow + 0.4) });
-    ctx.restore();
-  }
-  // the product: the real app on two phones, the ring circling behind
-  if (TT >= CU.o_prod - 1e-6) {
-    const u = inn(CU.o_prod, 0.7);
+  // the product: the site's own render, sharp
+  if (sharp) {
     gxChip("You're next.", CX, 1440, 46, { s: popS(CU.o_prod + 0.9), fill: gxRGBA(GX.red, 0.85), line: 'rgba(255,255,255,0.4)' });
-    me(190, 1200, 60, { mood: 'laugh', key: 'heroO', s: popS(CU.o_prod + 0.5), glow: GX.red });
+    me(190, 1200, 62, { mood: 'laugh', key: 'heroO', s: popS(CU.o_prod + 0.5), glow: GX.red });
   }
 }
 
 // ---------------------------------------------------------------------
-//  3. SEASON — amber world. Motion freezes at the hold.
+//  3. SEASON — amber: blurred behind the story, the fitting room sharp. Everything stops at the hold.
 // ---------------------------------------------------------------------
 function sceneSeason() {
-  const hold = TT >= CU.hold - 1e-6; if (hold) TT = CU.hold;   // the hold: everything stops
+  const hold = TT >= CU.hold - 1e-6; if (hold) TT = CU.hold;
   const sharp = TT >= CU.s_prod - 1e-6;
-  gxPhoto(sharp ? 'bg-season2.jpg' : 'bg-season.jpg', sharp ? { zoom: 1.2 + (TT - CU.s_prod) * 0.02, focus: [0.62, 0.6] } : { zoom: 1.15, blur: 22, dark: 0.45 });
+  if (sharp) gxPhoto('bg-season2.jpg', { zoom: 1.2 + (TT - CU.s_prod) * 0.035, focus: [0.62, 0.6], dx: (TT - CU.s_prod) * 16 });
+  else { const c = travel([E0, CU.s_res, CU.s_per, CU.s_flow]); gxPhoto('bg-season.jpg', { zoom: c.zoom, blur: 22, dark: 0.42, dy: c.dy, dx: c.dx }); }
   label('02', 'Season', GX.amber);
-  if (live(CU.s_prob, CU.s_res)) {
-    const v = out(CU.s_res - 0.35); ctx.save(); ctx.translate(0, -v * 300);
+  beat(CU.s_prob, CU.s_res, 540, 1000, () => {
     gxTitle(['Does it', 'work on me?'], 90, 560, 112, { t: CU.s_prob, accent: { me: GX.amber } });
-    const orb = asset('season-orb.jpg'), u = inn(CU.s_prob + 0.2, 0.8), R = 230 * u;
-    if (orb && R > 1) { ctx.save(); ctx.shadowColor = gxRGBA(GX.amber, 0.6); ctx.shadowBlur = 90; ctx.beginPath(); ctx.arc(540, 1080 + flo(6, 10), R, 0, TAU); ctx.fillStyle = '#000'; ctx.fill(); ctx.clip(); ctx.drawImage(orb, 540 - R * 1.06, 1080 + flo(6, 10) - R * 1.06, R * 2.12, R * 2.12); ctx.restore(); }
-    ['S', 'M', 'L'].forEach((s, i) => gxChip(s, 250 + i * 290, 1400, 44, { s: popS(CU.s_prob + 0.8 + i * 0.15) * (1 - v) }));
-    me(860, 860, 56, { mood: 'wow', key: 'heroS', s: popS(CU.s_prob + 0.5) * (1 - v) });
-    ctx.restore();
-  }
-  if (live(CU.s_res, CU.s_per)) {
-    const v = out(CU.s_per - 0.3); ctx.save(); ctx.translate(-v * 900, 0);
-    gxEyebrow('Research', 90, 560, GX.amber, CU.s_res);
-    stat('25', 'shopper interviews', 90, 900, GX.amber, CU.s_res + 0.1);
-    ['Colour', 'Fit', 'Trust'].forEach((s, i) => gxChip(s, 220 + i * 280, 1150, 46, { s: popS(CU.s_res + 1.0 + i * 0.25), fill: i === 0 ? gxRGBA(GX.amber, 0.8) : undefined }));
+    const orb = asset('season-orb.jpg'), u = inn(CU.s_prob + 0.2, 0.8), R = 250 * u, oy = 1080 + flo(6, 12);
+    if (orb && R > 1) { ctx.save(); ctx.shadowColor = gxRGBA(GX.amber, 0.6); ctx.shadowBlur = 100; ctx.beginPath(); ctx.arc(540, oy, R, 0, TAU); ctx.fillStyle = '#000'; ctx.fill(); ctx.clip(); ctx.translate(540, oy); ctx.rotate(TT * 0.15); ctx.drawImage(orb, -R * 1.06, -R * 1.06, R * 2.12, R * 2.12); ctx.restore(); }
+    ['S', 'M', 'L'].forEach((t, i) => gxChip(t, 250 + i * 290, 1420, 44, { s: popS(CU.s_prob + 0.8 + i * 0.15) }));
+    me(860, 860, 58, { mood: 'wow', key: 'heroS', s: popS(CU.s_prob + 0.5) });
+  });
+  beat(CU.s_res, CU.s_per, 540, 1000, () => {
+    stat('25', 'shoppers', 90, 900, GX.amber, CU.s_res + 0.1);
+    ['Colour', 'Fit', 'Trust'].forEach((t, i) => gxChip(t, 220 + i * 280, 1150, 46, { s: popS(CU.s_res + 0.9 + i * 0.25), fill: i === 0 ? gxRGBA(GX.amber, 0.8) : undefined }));
     me(860, 1380, 56, { mood: 'smile', key: 'heroS', s: popS(CU.s_res + 0.3) });
-    ctx.restore();
+  });
+  if (TT >= CU.s_per - 1e-6 && TT < CU.s_flow + 0.01) {
+    const u = EZ.o3(clamp((TT - CU.s_per) / 0.9)), v = EZ.i2(clamp((TT - (CU.s_flow - 0.4)) / 0.4)), st = EZ.o3(clamp((TT - CU.s_story) / 0.8));
+    const F1 = gxFly(u, -1.0), P = gxPast(v);
+    gxPanelP('season-noa.jpg', 380, 760 - st * 120, 500, 760, { z: F1.z + P.z + st * 500, ry: 0.35 + F1.ry, blur: F1.blur + P.blur + st * 4, glow: GX.amber });
+    gxPanelP('season-persona.jpg', 700, 860 - st * 150, 640, 260, { crop: [20, 40, 740, 300], z: F1.z * 1.2 + P.z + st * 300, ry: -0.28 + F1.ry * 0.8, blur: F1.blur + P.blur, glow: GX.amber });
+    if (st > 0) { const F2 = gxFly(st, 0.8); gxPanelP('season-story.jpg', 540, 1250, 960, 122, { crop: [0, 0, 1100, 140], z: F2.z + P.z, ry: F2.ry, blur: F2.blur + P.blur, glow: GX.amber }); }
+    me(150, 1430, 54, { mood: TT < CU.s_story + 0.6 ? 'smile' : 'happy', key: 'heroS', s: u * (1 - v) });
   }
-  if (live(CU.s_per, CU.s_flow)) {
-    const u = inn(CU.s_per), v = out(CU.s_flow - 0.35), st = inn(CU.s_story, 0.7);
-    ctx.save(); ctx.translate(0, -v * 1200);
-    gxPanel('season-noa.jpg', 560 + flo(1, 6), 420 + (1 - u) * 200, 440, 668, { s: u, glow: GX.amber, r: 30 });
-    gxPanel('season-persona.jpg', 70 + flo(2, 6), 470 + (1 - u) * 260 - st * 120, 600, 830, { s: u, tilt: -0.4, r: 30 });
-    gxPanel('season-story.jpg', 60, 1010 + (1 - st) * 700 + flo(3, 5), 960, 384, { s: st, r: 24, glow: GX.amber });
-    me(930, 1430, 52, { mood: TT < CU.s_story + 0.6 ? 'smile' : 'happy', key: 'heroS', s: u });
-    ctx.restore();
+  if (TT >= CU.s_flow - 1e-6 && TT < CU.s_prod + 0.01) {
+    const u = EZ.o3(clamp((TT - CU.s_flow) / 0.8)), v = EZ.i2(clamp((TT - (CU.s_prod - 0.4)) / 0.4)), F = gxFly(u, -0.7), P = gxPast(v);
+    const pan = EZ.io(clamp((TT - CU.s_flow - 0.4) / 2.4)), img = asset('season-flow.jpg');
+    if (img) { const ch = img.width * 0.95; gxPanelP('season-flow.jpg', 520, 1060, 860, 745, { crop: [0, pan * (img.height - ch), img.width, ch], z: F.z + P.z, ry: -0.22 + F.ry, blur: F.blur + P.blur, glow: GX.amber }); }
+    beat(CU.s_flow, CU.s_prod, 540, 500, () => gxTitle(['First photo,', 'to a look she buys.'], 90, 430, 84, { t: CU.s_flow, accent: { buys: GX.amber } }));
   }
-  if (live(CU.s_flow, CU.s_prod)) {
-    const v = out(CU.s_prod - 0.3), rev = EZ.io(clamp((TT - CU.s_flow - 0.3) / 2.0));
-    ctx.save(); ctx.translate(0, -v * 1300);
-    gxTitle(['From a first photo', 'to a look she buys.'], 90, 470, 84, { t: CU.s_flow, accent: { buys: GX.amber } });
-    const fx = 150, fy = 590, fw = 780, fh = 928;
-    ctx.save(); ctx.beginPath(); ctx.rect(fx - 40, fy - 40, fw + 80, 40 + fh * rev + 40); ctx.clip();
-    gxPanel('season-flow.jpg', fx, fy, fw, fh, { r: 28, glow: GX.amber });
-    ctx.restore();
-    ctx.restore();
-  }
-  if (TT >= CU.s_prod - 1e-6) {
-    const u = inn(CU.s_prod, 0.7);
+  if (sharp) {
     gxChip('The fitting room', CX, 1440, 46, { s: popS(CU.s_prod + 0.8) });
-    me(880, 1250, 58, { mood: hold ? 'wow' : 'laugh', key: 'heroS', s: popS(CU.s_prod + 0.5), glow: GX.amber });
+    me(880, 1250, 60, { mood: hold ? 'wow' : 'laugh', key: 'heroS', s: popS(CU.s_prod + 0.5), glow: GX.amber });
   }
 }
 

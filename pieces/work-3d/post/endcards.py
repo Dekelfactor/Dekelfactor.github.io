@@ -42,10 +42,10 @@ def text(img, s, fnt, cx, y, fill, t, t0, ls=0):
     img.alpha_composite(layer)
 
 def frame(t):
-    img = (BG_OSJ if KIND == 'linkedin-osj' else BG).convert('RGBA')
+    img = (BG_OSJ if KIND in ('linkedin-osj', 'linkedin-v2') else BG).convert('RGBA')
     # Paper-me pops in
     s = ease(t / 0.5) * (1 + 0.02 * math.sin(t * 3))
-    if s > 0.01:
+    if s > 0.01 and KIND != 'linkedin-v2':
         h = int((260 if KIND in ('linkedin-logo', 'linkedin-osj') else 330) * s); w = int(h * HEAD.width / HEAD.height)
         hd = HEAD.resize((max(1, w), max(1, h)), Image.LANCZOS)
         img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410, 'linkedin-logo': 370, 'linkedin-osj': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
@@ -145,6 +145,48 @@ def frame(t):
             if u > 0.9: d.text((W / 2, 1340), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
         glowtext('OPEN TO PRODUCT DESIGN ROLES', ImageFont.truetype(FD + 'BebasNeue.ttf', 60), W / 2, 1446, (255, 255, 255), 1.15, ls=2)
         glowtext('DEKEL FACTOR DESIGNS', ImageFont.truetype(FD + 'SpaceMono-Bold.ttf', 26), W / 2, 1494, (251, 90, 100), 1.3, ls=4)
+    elif KIND == 'linkedin-v2':
+        FD = S_FONTS; RED_ = (251, 13, 31)
+        def tx(s_, fnt, x, y, fill, t0, anchor='ms', ls=0):
+            u = eo((t - t0) / 0.5)
+            if u <= 0: return
+            layer = Image.new('RGBA', img.size, (0, 0, 0, 0)); d = ImageDraw.Draw(layer)
+            w = sum(d.textlength(c, font=fnt) for c in s_) + ls * (len(s_) - 1)
+            xx = x - w / 2 if anchor == 'ms' else x; yy = y + (1 - u) * 30
+            for c in s_:
+                d.text((xx, yy), c, font=fnt, fill=fill + (int(255 * u),), anchor='ls'); xx += d.textlength(c, font=fnt) + ls
+            img.alpha_composite(layer)
+        # 1. hero: the logo
+        u = ease((t - 0.1) / 0.6)
+        if u > 0.01:
+            lh = int(560 * (0.85 + 0.15 * u)); lw = int(lh * LOGO.width / LOGO.height)
+            L = LOGO.resize((lw, lh), Image.LANCZOS)
+            if u < 1: L.putalpha(L.split()[3].point(lambda v: int(v * min(1, u))))
+            img.alpha_composite(L, (W // 2 - lw // 2, 690 - lh // 2))
+        # 2. message: one headline, one call to action
+        hf = ImageFont.truetype(FD + 'BebasNeue.ttf', 112)
+        tx('DESIGNED & BUILT', hf, W / 2, 1105, (255, 255, 255), 0.45, ls=2)
+        tx('FROM RESEARCH TO LIVE', hf, W / 2, 1205, RED_, 0.6, ls=2)
+        u = eo((t - 0.85) / 0.4)
+        if u > 0:
+            d = ImageDraw.Draw(img); fnt = ImageFont.truetype(FD + 'SpaceGrotesk-Bold.ttf', 36); s2 = 'Case study in the first comment'
+            tw2 = d.textlength(s2, font=fnt); pw = tw2 + 80; a_ = int(255 * u)
+            pl = Image.new('RGBA', img.size, (0, 0, 0, 0)); pd = ImageDraw.Draw(pl)
+            pd.rounded_rectangle((W / 2 - pw / 2, 1250, W / 2 + pw / 2, 1326), radius=38, outline=(255, 255, 255, a_), width=3)
+            pd.text((W / 2, 1300), s2, font=fnt, fill=(255, 255, 255, a_), anchor='ms'); img.alpha_composite(pl)
+        # 3. signature: a byline row under a thin divider
+        u = eo((t - 1.1) / 0.5)
+        if u > 0:
+            d = ImageDraw.Draw(img); half = 300 * u
+            d.line((W / 2 - half, 1372, W / 2 + half, 1372), fill=(255, 255, 255, 70), width=2)
+            hh = 108; hd = HEAD.resize((int(hh * HEAD.width / HEAD.height), hh), Image.LANCZOS)
+            nf = ImageFont.truetype(FD + 'SpaceGrotesk-Bold.ttf', 36); mf = ImageFont.truetype(FD + 'SpaceMono-Bold.ttf', 22)
+            nw = d.textlength('Dekel Factor Designs', font=nf); rw = d.textlength('OPEN TO PRODUCT DESIGN ROLES', font=mf) + 3 * 27
+            total = hd.width + 26 + max(nw, rw); x0 = W / 2 - total / 2
+            if u < 1: hd.putalpha(hd.split()[3].point(lambda v: int(v * u)))
+            img.alpha_composite(hd, (int(x0), 1392))
+            tx('Dekel Factor Designs', nf, x0 + hd.width + 26, 1440, (255, 255, 255), 1.15, anchor='ls')
+            tx('OPEN TO PRODUCT DESIGN ROLES', mf, x0 + hd.width + 26, 1480, RED_, 1.25, anchor='ls', ls=3)
     elif KIND == 'reels':
         text(img, 'Comment', font('InterDisplay-ExtraBold.otf', 84), W / 2, 820, (255, 255, 255), t, 0.15)
         text(img, 'JAM', font('InterDisplay-Black.otf', 330), W / 2, 1120, RED, t, 0.3, ls=-8)

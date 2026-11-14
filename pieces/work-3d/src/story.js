@@ -72,79 +72,68 @@ function scenePromise() {
 // ---------------------------------------------------------------------
 //  3. THE STORY — a jam night, without and with
 // ---------------------------------------------------------------------
+// a rendered story scene: cover-fit, a slow push, a blur-zoom in on its first 0.3s; dark ends kept for captions
+function shot(name, t0, o = {}) {
+  const img = asset(name); ctx.save(); ctx.fillStyle = GX.ground; ctx.fillRect(0, 0, W, H);
+  if (img) {
+    const inU = EZ.o3(clamp((TT - t0) / 0.3)), z = (o.zoom ?? 1.04) + (TT - t0) * (o.push ?? 0.025) + (1 - inU) * 0.12;
+    const k = Math.max(W / img.width, H / img.height) * z, w = img.width * k, h = img.height * k;
+    const [fx, fy] = o.focus ?? [0.5, 0.5];
+    if (inU < 1) ctx.filter = `blur(${((1 - inU) * 14).toFixed(1)}px)`;
+    ctx.drawImage(img, W * 0.5 - w * fx + (o.dx ?? 0) * (TT - t0), H * 0.5 - h * fy, w, h); ctx.filter = 'none';
+  }
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(5,5,7,0.55)'); g.addColorStop(0.24, 'rgba(5,5,7,0)'); g.addColorStop(0.74, 'rgba(5,5,7,0)'); g.addColorStop(1, 'rgba(5,5,7,0.6)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+// a small real screen floating in a scene (the with-the-app moments)
+const insert = (name, t, x, y, h, rot = 0.05) => gxPhone(name, x, y + (1 - EZ.o3(clamp((TT - t) / 0.5))) * 260, h, { rot, glow: GX.red, s: EZ.o3(clamp((TT - t) / 0.5)) });
+
 function sceneStory() {
-  const warm = TT >= CU.rewind;
-  const flick = TT >= CU.rewind && TT < CU.a_scan && Math.floor(TT * 24) % 2 === 0;   // the rewind: a time-cut flicker on 2s
-  venue(warm && !flick, { dx: warm ? Math.sin(TT * 0.3) * 30 : -TT * 6 });
-  if (!warm) {
-    if (TT < CU.b_scroll) {   // the cold open
-      me(540, 980, 92, { mood: 'focus', key: 'heroS' });
-      gxTitle(['Waited all night', 'to sing…'], 90, 560, 104, { t: CU.hook });
-      gxTitle(['…and never', 'got on?'], 90, 1360, 104, { t: CU.hook2, accent: { 'on?': '#9aa6c0' } });
-      return;
-    }
-    tagLine('Without the app', CU.b_scroll, 'rgba(120,130,150,0.35)');
-    // a. chasing the night across posts
-    beat(CU.b_scroll, CU.b_msg, 540, 900, () => {
-      const scroll = (TT - CU.b_scroll) * 260;
-      ctx.save(); ctx.beginPath(); ctx.rect(60, 420, 960, 780); ctx.clip();
-      [['Jam Night TLV', 'sign-up at 8?? maybe 9', '#7a5cff'], ['Ronit', 'is the list full already?', '#ff7a59'], ['The Back Room', 'open mic moved to thursday', '#2fd6c8'], ['Omer', 'anyone know who\'s hosting?', '#ffb020'], ['Jam Night TLV', 'bring your own cable', '#7a5cff']]
-        .forEach(([w, t, c], i) => post(100, 1140 + i * 180 - scroll, 880, w, t, c));
-      ctx.restore();
-      me(540, 1400, 64, { mood: 'focus', key: 'heroS' });
-      caption(['Where? When?', 'Is there a list?'], CU.b_scroll + 0.2, { 'list?': '#9aa6c0' }, 500, 76);
-    });
-    // b. a message, no reply
-    beat(CU.b_msg, CU.b_wait, 540, 900, () => {
-      bubble(980, 700, 'is there space tonight?', { meta: TT > CU.b_msg + 1.0 ? 'Seen 20:41' : 'Delivered' });
-      if (TT > CU.b_msg + 0.6 && TT < CU.b_msg + 1.2) typingDots(150, 940);
-      me(780, 1120, 70, { mood: TT > CU.b_msg + 1.2 ? 'focus' : 'smile', key: 'heroS', rot: -0.1 });
-      caption(['No reply.'], CU.b_msg + 1.1, {}, 1560 - 120, 88);
-    });
-    // c. the wait: the clock runs, the energy drains
-    beat(CU.b_wait, CU.b_out, 540, 900, () => {
-      const m = 0 + clamp((TT - CU.b_wait) / 1.8) * 150;
-      wallClock(540, 760, 230, m);
-      energy(240, 1180, 600, 1 - m / 170, m > 100 ? '#ff5a5a' : '#ffb020');
-      me(860, 1380, 60, { mood: 'focus', key: 'heroS' });
-      caption(['Still waiting.'], CU.b_wait + 0.3, {}, 1400, 80);
-    });
-    // d. not tonight
-    beat(CU.b_out, CU.rewind, 540, 900, () => {
-      me(540, 900, 96, { mood: 'focus', key: 'heroS' });
-      caption(['Not tonight.'], CU.b_out + 0.2, { 'tonight.': '#9aa6c0' }, 1350, 110);
-    }, { last: true });
-  } else {
-    tagLine('With Open Stage Jam', CU.a_scan, gxRGBA(GX.red, 0.75));
-    if (flick) { gxTitle(['Same night.'], 90, 960, 120, { t: CU.rewind }); return; }
-    // a. scan in at the table
-    beat(CU.a_scan, CU.a_queue, 540, 900, () => {
-      const qr = asset('prop-qr.jpg'); if (qr) { ctx.save(); ctx.shadowColor = gxRGBA(GX.red, 0.5); ctx.shadowBlur = 60; ctx.drawImage(qr, 90, 600, 420, 420); ctx.restore(); }
-      gxPhone('osj26-wizard.jpg', 760, 900, 760, { rot: 0.05, glow: GX.red, s: EZ.o3(clamp((TT - CU.a_scan - 0.3) / 0.6)) });
-      me(300, 1240, 62, { mood: 'happy', key: 'heroS' });
-      caption(['Scan in at the table.'], CU.a_scan + 0.2, {}, 500, 76);
-    });
-    // b. your place in line, in words
-    beat(CU.a_queue, CU.a_next, 540, 900, () => {
-      gxPhone('osj26-queue.jpg', 540, 1010, 880, { glow: GX.red, s: 1 });
-      me(880, 1380, 60, { mood: 'smile', key: 'heroS' });
-      caption(['2 before you.'], CU.a_queue + 0.2, { '2': GX.red }, 500, 84);
-    });
-    // c. the buzz
-    beat(CU.a_next, CU.a_stage, 540, 900, () => {
-      const buzz = Math.sin(TT * 60) * 6 * Math.exp(-(TT - CU.a_next) * 4);
-      gxPhone('osj26-lock.jpg', 540 + buzz, 1010, 880, { glow: GX.red, s: 1 });
-      me(200, 1380, 66, { mood: 'wow', key: 'heroS' });
-      caption(["You're next."], CU.a_next + 0.1, { "next.": GX.red }, 500, 96);
-    });
-    // d. on stage
-    if (TT >= CU.a_stage - 1e-6) {
-      venue(true, { blur: 0.01, dx: -(TT - CU.a_stage) * 20 });
-      const sp = ctx.createRadialGradient(540, 700, 0, 540, 900, 900); sp.addColorStop(0, 'rgba(255,230,220,0.28)'); sp.addColorStop(1, 'rgba(255,230,220,0)'); ctx.fillStyle = sp; ctx.fillRect(0, 0, W, H);
-      meBody('me-body-cheer.png', 400, 1935, 0.62, { glow: GX.red });
-      gxPhone('osj26-niceset.jpg', 820, 900, 620, { rot: 0.06, glow: GX.red, s: EZ.o3(clamp((TT - CU.a_stage - 0.4) / 0.6)) });
-      caption(['On stage.'], CU.a_stage + 0.2, { 'stage.': GX.red }, 500, 104);
-    }
+  const C = CU;
+  if (TT < C.b_scroll) {                                   // cold open: alone at the bar, someone else on stage
+    shot('s-alone.jpg', 0, { focus: [0.45, 0.52], dx: 6 });
+    gxTitle(['Waited all night', 'to sing…'], 90, 400, 100, { t: C.hook });
+    gxTitle(['…and never', 'got on?'], 90, 1330, 100, { t: C.hook2, accent: { 'on?': '#9aa6c0' } });
+  } else if (TT < C.b_msg) {                               // chasing posts
+    shot('s-chaos.jpg', C.b_scroll, { focus: [0.5, 0.45] });
+    tagLine('Without the app', C.b_scroll, 'rgba(120,130,150,0.35)');
+    gxTitle(['Where? When?', 'Is there a list?'], 90, 1330, 84, { t: C.b_scroll + 0.2, accent: { 'list?': '#9aa6c0' } });
+  } else if (TT < C.b_wait) {                              // a message, no reply
+    shot('s-alone.jpg', C.b_msg, { zoom: 1.5, focus: [0.3, 0.55], push: 0.04 });
+    tagLine('Without the app', C.b_msg, 'rgba(120,130,150,0.35)');
+    bubble(920, 560, 'is there space tonight?', { meta: TT > C.b_msg + 1.0 ? 'Seen 20:41' : 'Delivered' });
+    if (TT > C.b_msg + 0.6 && TT < C.b_msg + 1.2) typingDots(150, 800);
+    gxTitle(['No reply.'], 90, 1430, 96, { t: C.b_msg + 1.1 });
+  } else if (TT < C.b_out) {                               // the wait under the clock
+    shot('s-clock.jpg', C.b_wait, { focus: [0.5, 0.45] });
+    tagLine('Without the app', C.b_wait, 'rgba(120,130,150,0.35)');
+    gxTitle(['Still waiting.'], 90, 1430, 96, { t: C.b_wait + 0.3 });
+  } else if (TT < C.rewind) {                              // not tonight: out into the rain
+    shot('s-rain.jpg', C.b_out, { focus: [0.5, 0.5], push: 0.03 });
+    gxTitle(['Not tonight.'], 90, 1430, 110, { t: C.b_out + 0.2, accent: { 'tonight.': '#9aa6c0' } });
+  } else if (TT < C.a_scan) {                              // rewind: a flicker on 2s between the rain and the warm bar
+    shot(Math.floor(TT * 12) % 2 ? 's-rain.jpg' : 's-scan.jpg', C.rewind, { zoom: 1.1, push: 0 });
+    gxTitle(['Same night.'], 90, 960, 120, { t: C.rewind });
+  } else if (TT < C.a_queue) {                             // with: scan in at the table
+    shot('s-scan.jpg', C.a_scan, { focus: [0.45, 0.55] });
+    tagLine('With Open Stage Jam', C.a_scan, gxRGBA(GX.red, 0.75));
+    insert('osj26-wizard.jpg', C.a_scan + 0.6, 800, 820, 560);
+    gxTitle(['Scan in at the table.'], 90, 1430, 76, { t: C.a_scan + 0.2 });
+  } else if (TT < C.a_next) {                              // relaxed: your place, in words
+    shot('s-relaxed.jpg', C.a_queue, { focus: [0.5, 0.55] });
+    tagLine('With Open Stage Jam', C.a_queue, gxRGBA(GX.red, 0.75));
+    insert('osj26-queue.jpg', C.a_queue + 0.5, 800, 760, 560, -0.05);
+    gxTitle(['2 before you.', 'Relax.'], 90, 1340, 84, { t: C.a_queue + 0.2, accent: { '2': GX.red } });
+  } else if (TT < C.a_stage) {                             // the buzz
+    const bz = Math.sin(TT * 60) * 5 * Math.exp(-(TT - C.a_next) * 4);
+    ctx.save(); ctx.translate(bz, 0); shot('s-buzz.jpg', C.a_next, { focus: [0.5, 0.55] }); ctx.restore();
+    tagLine('With Open Stage Jam', C.a_next, gxRGBA(GX.red, 0.75));
+    insert('osj26-lock.jpg', C.a_next + 0.3, 800, 720, 560, 0.04);
+    gxTitle(["You're next."], 90, 1430, 104, { t: C.a_next + 0.1, accent: { 'next.': GX.red } });
+  } else {                                                 // on stage
+    shot('s-stage.jpg', C.a_stage, { focus: [0.5, 0.5], push: 0.035 });
+    tagLine('With Open Stage Jam', C.a_stage, gxRGBA(GX.red, 0.75));
+    gxTitle(['On stage.'], 90, 1430, 120, { t: C.a_stage + 0.2, accent: { 'stage.': GX.red } });
   }
 }
 // ---------------------------------------------------------------------

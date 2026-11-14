@@ -38,7 +38,7 @@ function stat(num, lab, x, y, tint, t) {
   ctx.save(); ctx.translate(0, (1 - u) * 60);
   ctx.font = `700 260px ${GX_SANS}`; ctx.letterSpacing = '-12px'; ctx.fillStyle = tint; ctx.fillText(num, x, y);
   const w = ctx.measureText(num).width; ctx.restore();
-  gxText(lab, x + w + 30, y - 60, 52, GX.ink, { weight: 600, t: t + 0.15 });
+  gxText(lab, x + w + 24, y - 60, 42, GX.ink, { weight: 600, t: t + 0.15 });
 }
 
 // ---------------------------------------------------------------------

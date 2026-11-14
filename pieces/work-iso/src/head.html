@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dekel Factor Designs — the work</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f4f4f6; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { height: min(100vh, calc(100vw * 16 / 9)); width: auto; aspect-ratio: 9 / 16; display: block; cursor: pointer; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+"use strict";
+// =====================================================================
+//  DEKEL FACTOR DESIGNS — THE WORK. 9:16, 40.0s @ 120 BPM, 24fps. Morph chain through a ring:
+//  intro -> Open Stage Jam (problem, research, persona + story, flow, product) -> the ring becomes Season's orb ->
+//  Season (the same five steps) -> hold -> hard cut to the payoff. Paper-me (the user's own sticker) hosts.
+// =====================================================================
+const FPS = 24, W = 1080, H = 1920;
+const BPM = 120, BEAT = 60 / BPM, E8 = BEAT / 2, E16 = BEAT / 4;
+const DURATION = 40.0;
+const NFRAMES = Math.round(DURATION * FPS);
+const LOOP_T = NFRAMES / FPS;
+const SAFE = { top: 240, bottom: 420, right: 140 };
+const HAND = '"Inter", "Segoe UI", Arial, sans-serif';
+const CX = 470;
+
+const ERA_LIST = [
+  [0, 4.0, () => sceneIntro()],
+  [4.0, 20.5, () => sceneOSJ()],
+  [20.5, 36.5, () => sceneSeason()],
+  [36.5, 40.0, () => scenePayoff()],
+];
+const SHOTS = [
+  ['intro',   0, 0.0,  4.0,  'the ring in the dark; Paper-me peeks through; the thesis line'],
+  ['osj',     1, 4.0,  20.5, 'Open Stage Jam: problem, research, Alex, before/after, flow, product'],
+  ['season',  2, 20.5, 36.5, 'Season: problem, research, Noa, before/after, flow, product; hold'],
+  ['payoff',  3, 36.5, 40.0, 'Paper-me waving, the work orbiting the ring, the studio name'],
+];
+const TIMELINE = {
+  width: W, height: H, fps: FPS, bpm: BPM, duration: DURATION, frames: NFRAMES, loop: LOOP_T, safe: SAFE,
+  format: 'morph-chain',
+  shots: SHOTS.map(([key, era, t0, t1, title], i) => ({ id: i + 1, key, era, t0, t1, title })),
+  cuts: [36.5],
+  morphs: [4.0, 20.5],
+  cues: {
+    thesis: 0.75,
+    o_prob: 4.5, o_res: 7.5, o_per: 10.0, o_story: 11.75, o_flow: 13.5, o_prod: 16.5,
+    s_prob: 21.0, s_res: 24.0, s_per: 26.5, s_story: 28.25, s_flow: 30.0, s_prod: 33.0,
+    hold: 35.5, slam: 36.5, name: 37.0,
+  },
+  acts: [
+    { name: '1 Intro',  role: 'build',   t0: 0.0,  t1: 4.0 },
+    { name: '2 OSJ',    role: 'journey', t0: 4.0,  t1: 20.5 },
+    { name: '3 Season', role: 'peak',    t0: 20.5, t1: 35.5 },
+    { name: '4 Hold',   role: 'silence', t0: 35.5, t1: 36.5 },
+    { name: '5 Payoff', role: 'gift',    t0: 36.5, t1: 40.0 },
+  ],
+  board: [
+    { t: 2.6, title: 'I make complex products feel simple', sound: 'a low swell; a glass shimmer', next: 'through the ring' },
+    { t: 6.2, title: 'OSJ: the problem', sound: 'a pulse starts', next: 'research' },
+    { t: 9.0, title: 'OSJ: research', sound: 'ticks on the counter', next: 'Alex' },
+    { t: 12.9, title: 'OSJ: Alex, before / after', sound: 'the groove', next: 'the flow' },
+    { t: 15.6, title: 'OSJ: two roles, one live line', sound: 'the groove', next: 'the product' },
+    { t: 18.6, title: 'OSJ: the product', sound: 'a lift', next: 'the ring becomes the orb' },
+    { t: 22.6, title: 'Season: does it work on me?', sound: 'a new key', next: 'research' },
+    { t: 25.4, title: 'Season: 25 shoppers', sound: 'ticks', next: 'Noa' },
+    { t: 29.4, title: 'Season: Noa, before / after', sound: 'the fullest groove', next: 'the flow' },
+    { t: 31.8, title: 'Season: from a first photo', sound: 'the fullest groove', next: 'the product' },
+    { t: 34.4, title: 'Season: the fitting room', sound: 'the fullest; dry at 35.25', next: 'hold' },
+    { t: 36.0, title: 'hold', sound: 'silence', next: 'hard cut' },
+    { t: 38.6, title: 'Dekel Factor Designs', sound: 'the loudest hit, then a warm chord', next: 'end' },
+  ],
+  narration: [],
+};
+window.TIMELINE = TIMELINE;

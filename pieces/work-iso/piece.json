@@ -1,0 +1,8 @@
+{
+  "name": "work-iso",
+  "title": "Dekel Factor Designs — the work (isometric)",
+  "format": { "width": 1080, "height": 1920, "fps": 24, "bpm": 120, "duration": 40.0, "frames": 960 },
+  "storyFormat": "F2 morph chain",
+  "style": "isometric",
+  "review": { "safe": { "top": 240, "bottom": 420, "right": 140 }, "refs": {} }
+}

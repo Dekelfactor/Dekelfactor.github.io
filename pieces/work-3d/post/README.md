@@ -18,3 +18,8 @@ Dekelfactor/openstagejam `index.html`). `logo.cjs <svg> <out.png> <width>` rende
 app's own red glow; `screencards3d.py` splits it into the mic mark and the wordmark for the "with Open Stage Jam" tag
 (14.75–26.4s, covering the baked Katana tag), and `endcards.py <out> linkedin-logo` places it under a 3D
 "Designed & built" line on the LinkedIn end card. The logo files themselves stay out of this public repo.
+
+## LinkedIn end card: one style (`endcards.py <out> linkedin-osj`)
+Uses the app's own type system (from openstagejam's Google Fonts import): Bebas Neue (headlines), Space Grotesk
+(body, the pill), Space Mono (the studio label), the logo's red #FB0D1F and a deep-red glow. Fonts come from the
+Fontsource npm packages (@fontsource/bebas-neue, space-grotesk, space-mono), converted to TTF with fontTools.

@@ -12,17 +12,18 @@ JAM3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad3
 OSJ3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/osj3d-b.png').convert('RGBA'); OSJ3D = OSJ3D.crop(OSJ3D.getbbox())
 LOGO = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/osj-logo.png').convert('RGBA'); LOGO = LOGO.crop(LOGO.getbbox())
 DESIGNED = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/designed3d.png').convert('RGBA')
+S_FONTS = '/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/fonts/'
 HEAD = Image.open('/home/user/Dekelfactor.github.io/pieces/_work/me-happy.png').convert('RGBA')
 os.makedirs(OUT, exist_ok=True)
 
-def ground():
+def ground(tint_rgb=(120, 30, 12)):
     g = Image.new('RGB', (W, H), (5, 3, 4))
     glow = Image.new('L', (W, H), 0); d = ImageDraw.Draw(glow)
     d.ellipse((W / 2 - 620, 1050 - 560, W / 2 + 620, 1050 + 560), fill=255)
     glow = glow.filter(ImageFilter.GaussianBlur(220))
-    tint = Image.new('RGB', (W, H), (120, 30, 12))
+    tint = Image.new('RGB', (W, H), tint_rgb)
     return Image.composite(tint, g, glow.point(lambda v: int(v * 0.75)))
-BG = ground()
+BG = ground(); BG_OSJ = ground((112, 6, 14))
 
 def ease(t):  # out-back, a small overshoot
     t = max(0.0, min(1.0, t)); c = 1.70158; t -= 1
@@ -41,13 +42,13 @@ def text(img, s, fnt, cx, y, fill, t, t0, ls=0):
     img.alpha_composite(layer)
 
 def frame(t):
-    img = BG.convert('RGBA')
+    img = (BG_OSJ if KIND == 'linkedin-osj' else BG).convert('RGBA')
     # Paper-me pops in
     s = ease(t / 0.5) * (1 + 0.02 * math.sin(t * 3))
     if s > 0.01:
-        h = int((260 if KIND == 'linkedin-logo' else 330) * s); w = int(h * HEAD.width / HEAD.height)
+        h = int((260 if KIND in ('linkedin-logo', 'linkedin-osj') else 330) * s); w = int(h * HEAD.width / HEAD.height)
         hd = HEAD.resize((max(1, w), max(1, h)), Image.LANCZOS)
-        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410, 'linkedin-logo': 370}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
+        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410, 'linkedin-logo': 370, 'linkedin-osj': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
     if KIND == 'reels3d':
         # the 3D lettering: pops in with an overshoot, settles with a slow float, a light sweeps across it
         u = ease((t - 0.2) / 0.55)
@@ -114,6 +115,36 @@ def frame(t):
             if u > 0.9: d.text((W / 2, 1343), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
         text(img, 'Open to product design roles', font('InterDisplay-ExtraBold.otf', 40), W / 2, 1430, (255, 255, 255), t, 1.15)
         text(img, 'Dekel Factor Designs', font('InterDisplay-ExtraBold.otf', 28), W / 2, 1476, (190, 170, 160), t, 1.3)
+    elif KIND == 'linkedin-osj':
+        FD = S_FONTS
+        OSJ_RED = (251, 13, 31)
+        def glowtext(s_, fnt, cx, y, fill, t0, glow=False, ls=0):
+            u = eo((t - t0) / 0.45)
+            if u <= 0: return
+            layer = Image.new('RGBA', img.size, (0, 0, 0, 0)); d = ImageDraw.Draw(layer)
+            w = d.textlength(s_, font=fnt) + ls * (len(s_) - 1); x = cx - w / 2; yy = y + (1 - u) * 40
+            for ch in s_:
+                d.text((x, yy), ch, font=fnt, fill=fill + (int(255 * u),), anchor='ls'); x += d.textlength(ch, font=fnt) + ls
+            if glow:
+                g = layer.split()[3].filter(ImageFilter.GaussianBlur(18)).point(lambda v: int(v * 0.6))
+                img.alpha_composite(Image.merge('RGBA', (Image.new('L', img.size, OSJ_RED[0]), Image.new('L', img.size, OSJ_RED[1]), Image.new('L', img.size, OSJ_RED[2]), g)))
+            img.alpha_composite(layer)
+        # headline, in the app's display face
+        glowtext('DESIGNED & BUILT', ImageFont.truetype(FD + 'BebasNeue.ttf', 118), W / 2, 700, (255, 255, 255), 0.2, ls=3)
+        # the original logo
+        u = ease((t - 0.45) / 0.55)
+        if u > 0.01:
+            lh = int(440 * u); lw = int(lh * LOGO.width / LOGO.height)
+            img.alpha_composite(LOGO.resize((lw, lh), Image.LANCZOS), (W // 2 - lw // 2, 975 - lh // 2))
+        glowtext('From research to a live product.', ImageFont.truetype(FD + 'SpaceGrotesk-Medium.ttf', 44), W / 2, 1258, (240, 236, 234), 0.75)
+        u = eo((t - 0.95) / 0.4)
+        if u > 0:
+            d = ImageDraw.Draw(img); fnt = ImageFont.truetype(FD + 'SpaceGrotesk-Bold.ttf', 38); s2 = 'Case study in the first comment'
+            tw2 = d.textlength(s2, font=fnt); pw = (tw2 + 72) * u
+            d.rounded_rectangle((W / 2 - pw / 2, 1290, W / 2 + pw / 2, 1366), radius=38, fill=OSJ_RED)
+            if u > 0.9: d.text((W / 2, 1340), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
+        glowtext('OPEN TO PRODUCT DESIGN ROLES', ImageFont.truetype(FD + 'BebasNeue.ttf', 60), W / 2, 1446, (255, 255, 255), 1.15, ls=2)
+        glowtext('DEKEL FACTOR DESIGNS', ImageFont.truetype(FD + 'SpaceMono-Bold.ttf', 26), W / 2, 1494, (251, 90, 100), 1.3, ls=4)
     elif KIND == 'reels':
         text(img, 'Comment', font('InterDisplay-ExtraBold.otf', 84), W / 2, 820, (255, 255, 255), t, 0.15)
         text(img, 'JAM', font('InterDisplay-Black.otf', 330), W / 2, 1120, RED, t, 0.3, ls=-8)

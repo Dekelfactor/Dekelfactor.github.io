@@ -4,7 +4,7 @@
 // =====================================================================
 const CU = TIMELINE.cues;
 const MARK = [540, 1050];                  // where the sketch, the badge and the finished mark sit on the sheet
-function cap(str, t) { const f = () => tag(str, CX, H - SAFE.bottom - 60, 50, { rot: 0.012, tape: false, frac: ev(t, 0.6) }); if (DEFER) DEFER.push(f); else f(); }
+function cap(str, t) { if (!past(TT, t)) return; const f = () => tag(str, CX, H - SAFE.bottom - 60, 50, { rot: 0.012, tape: false, frac: ev(t, 0.6) }); if (DEFER) DEFER.push(f); else f(); }
 function stepTag(str, t) { const f = () => tag(str, 70 + (handW(str, 72) + 66) / 2, SAFE.top + 90, 72, { rot: -0.04, s: popS(t) }); if (DEFER) DEFER.push(f); else f(); }
 function markDisc(x, y, r, key) {
   cut(ellipsePts(x, y, r, r, 0, 48), PAL.mustard, { key: key + 'd', crayon: '#b9852c', crAl: 0.35 });

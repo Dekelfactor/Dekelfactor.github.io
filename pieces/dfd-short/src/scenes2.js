@@ -95,7 +95,6 @@ function sceneHome() {
   note(555, 640, 1, PAL.mint, 0.1, 'n2');
   markDisc(MARK[0], MARK[1] - 20, 190, 'home');
   spark(MARK[0], MARK[1] - 20, 78, { rays: 8, mood: 'happy', key: 'hero' });
-  const f = () => tag('Dekel Factor Designs', 520, 1300, 66, { rot: -0.02, frac: ev(CU.title, 0.7) });
+  const f = () => tag('Dekel Factor Designs', 520, 1300, 66, { rot: -0.02, frac: ev(CU.title, 0.5) });
   if (DEFER) DEFER.push(f); else f();
-  cap('ideas, made by hand', CU.title + 0.6);
 }

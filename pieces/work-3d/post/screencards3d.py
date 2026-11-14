@@ -49,10 +49,6 @@ def card3d(F, ry, rx, scale):
     sil = Image.new('RGBA', F.size, (0, 0, 0, 0)); sil.putalpha(alpha.point(lambda a: int(a * 0.6)))
     sh = sil.transform((cw, ch), Image.PERSPECTIVE, coeffs(shq, src), Image.BICUBIC).filter(ImageFilter.GaussianBlur(34))
     out.alpha_composite(sh)
-    # the metal edge: the same rounded silhouette, pushed back a few px, in dark grey-blue (follows the corners)
-    edq = [(x + ox + dx, y + oy + 6 * scale) for x, y in q]
-    ed = Image.new('RGBA', F.size, (62, 64, 74, 0)); ed.putalpha(alpha)
-    out.alpha_composite(ed.transform((cw, ch), Image.PERSPECTIVE, coeffs(edq, src), Image.BICUBIC))
     dst = [(x + ox, y + oy) for x, y in q]
     warped = F.transform((cw, ch), Image.PERSPECTIVE, coeffs(dst, src), Image.BICUBIC)
     out.alpha_composite(warped)
@@ -80,12 +76,12 @@ def put(img, F, cx, cy, t_in, t_out, t, ry_end, label=None, phase=0.0):
         if la < 1: p.putalpha(p.split()[3].point(lambda q: int(q * la)))
         img.alpha_composite(p, (int(cx - p.width / 2), int(y + F.height * 0.5 * s + 10)))
 
-CK = face('o-checkedin.webp', 600); QU = face('s-queueline.webp', 720); LK = face('f-lock.webp', 720); NS = face('o-onstage2.webp', 780)
+CK = face('o-checkedin.webp', 700); QU = face('s-queueline.webp', 800); LK = face('f-lock.webp', 800); NS = face('o-onstage2.webp', 780)
 for i in range(int(round((T1 - T0) * FPS))):
     t = T0 + i / FPS; img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    put(img, CK, 270, 640, 15.15, 17.57, t, ry_end=18, label="You're checked in")
-    put(img, QU, 790, 640, 17.70, 20.40, t, ry_end=-18, label='Your place in line', phase=0.6)
-    put(img, LK, 790, 660, 20.50, 23.17, t, ry_end=-18, label='Live alert', phase=1.2)
+    put(img, CK, 215, 640, 15.15, 17.57, t, ry_end=18, label="You're checked in")
+    put(img, QU, 860, 560, 17.70, 20.40, t, ry_end=-18, label='Your place in line', phase=0.6)
+    put(img, LK, 850, 590, 20.50, 23.17, t, ry_end=-18, label='Live alert', phase=1.2)
     put(img, NS, 790, 760, 23.45, 26.37, t, ry_end=-16, label='Chords on stage', phase=1.8)
     img.save(f'{OUT}/o{i:04d}.png')
 print('ok', i + 1, 'frames')

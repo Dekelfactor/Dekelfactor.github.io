@@ -9,6 +9,7 @@ RED = (255, 73, 25)
 F = '/usr/share/fonts/opentype/inter/'
 font = lambda name, size: ImageFont.truetype(F + name, size)
 JAM3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/jam3d-b.png').convert('RGBA'); JAM3D = JAM3D.crop(JAM3D.getbbox())
+OSJ3D = Image.open('/tmp/claude-0/-home-user/b7e0d5e7-dbb1-5a81-94b7-e8f98576ad30/scratchpad/osj3d-b.png').convert('RGBA'); OSJ3D = OSJ3D.crop(OSJ3D.getbbox())
 HEAD = Image.open('/home/user/Dekelfactor.github.io/pieces/_work/me-happy.png').convert('RGBA')
 os.makedirs(OUT, exist_ok=True)
 
@@ -44,7 +45,7 @@ def frame(t):
     if s > 0.01:
         h = int(330 * s); w = int(h * HEAD.width / HEAD.height)
         hd = HEAD.resize((max(1, w), max(1, h)), Image.LANCZOS)
-        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
+        img.alpha_composite(hd, (W // 2 - w // 2, ({'reels': 510, 'reels3d': 410, 'linkedin3d': 410}.get(KIND, 560)) - h // 2 + int(math.sin(t * 2.4) * 6)))
     if KIND == 'reels3d':
         # the 3D lettering: pops in with an overshoot, settles with a slow float, a light sweeps across it
         u = ease((t - 0.2) / 0.55)
@@ -69,6 +70,30 @@ def frame(t):
             tw = d.textlength(s2, font=fnt); pw = (tw + 76) * u
             d.rounded_rectangle((W / 2 - pw / 2, 1412, W / 2 + pw / 2, 1488), radius=38, fill=RED)
             if u > 0.9: d.text((W / 2, 1463), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
+    elif KIND == 'linkedin3d':
+        u = ease((t - 0.2) / 0.55)
+        if u > 0.01:
+            tw = int(900 * u); th = int(tw * OSJ3D.height / OSJ3D.width)
+            L = OSJ3D.resize((tw, th), Image.LANCZOS)
+            sx = (t - 0.9) / 0.8
+            if 0 < sx < 1:
+                import numpy as np
+                band = Image.new('L', L.size, 0); bd = ImageDraw.Draw(band); bx = -300 + sx * (tw + 600)
+                bd.polygon([(bx, 0), (bx + 120, 0), (bx - 120, th), (bx - 240, th)], fill=150)
+                band = band.filter(ImageFilter.GaussianBlur(30))
+                mask = Image.fromarray(np.minimum(np.array(band), np.array(L.split()[3])).astype('uint8'))
+                L.alpha_composite(Image.composite(Image.new('RGBA', L.size, (255, 255, 255, 255)), Image.new('RGBA', L.size, (0, 0, 0, 0)), mask))
+            y = 870 + int(math.sin(t * 2.0) * 6)
+            img.alpha_composite(L, (W // 2 - tw // 2, y - th // 2))
+        text(img, 'from research to a live product.', font('InterDisplay-ExtraBold.otf', 46), W / 2, 1238, (255, 255, 255), t, 0.6)
+        u = eo((t - 0.8) / 0.4)
+        if u > 0:
+            d = ImageDraw.Draw(img); fnt = font('InterDisplay-ExtraBold.otf', 40); s2 = 'Case study in the first comment'
+            tw2 = d.textlength(s2, font=fnt); pw = (tw2 + 76) * u
+            d.rounded_rectangle((W / 2 - pw / 2, 1272, W / 2 + pw / 2, 1352), radius=40, fill=RED)
+            if u > 0.9: d.text((W / 2, 1326), s2, font=fnt, fill=(255, 255, 255), anchor='ms')
+        text(img, 'Open to product design roles', font('InterDisplay-ExtraBold.otf', 42), W / 2, 1420, (255, 255, 255), t, 1.0)
+        text(img, 'Dekel Factor Designs', font('InterDisplay-ExtraBold.otf', 30), W / 2, 1472, (190, 170, 160), t, 1.15)
     elif KIND == 'reels':
         text(img, 'Comment', font('InterDisplay-ExtraBold.otf', 84), W / 2, 820, (255, 255, 255), t, 0.15)
         text(img, 'JAM', font('InterDisplay-Black.otf', 330), W / 2, 1120, RED, t, 0.3, ls=-8)

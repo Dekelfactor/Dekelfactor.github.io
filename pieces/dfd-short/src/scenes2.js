@@ -8,7 +8,7 @@ function sceneSite() {
   // a shelf strip below: plant and mug
   cut(rect(-30, 1380, W + 60, 600, 0), PAL.wood, { key: 'deskS', tear: 0, sy: -6, pat: pat.grainWood('rgba(120,60,20,0.18)') });
   plant(110, 1400, 0.62, PAL.teal, 'plS');
-  mug(900, 1300, 0.85, PAL.blue, 'mugS');
+  mug(1010, 1300, 0.85, PAL.blue, 'mugS');
   // the browser window
   const [wx, wy, ww, wh] = WIN;
   cut(rect(wx, wy, ww, wh, 10), PAL.paper, { key: 'brw', sb: 18, sy: 12 });
@@ -18,46 +18,30 @@ function sceneSite() {
   ink([[wx + 230, wy + 38], [wx + 420, wy + 38]], { w: 4, color: 'rgba(255,255,255,0.6)', amt: 0.6, key: 'addrl' });
   const pop = (t, f) => { const s = popS(t); if (s <= 0.01) return; f(s); };
   const at = (cx, cy, s, f) => { ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy); f(); ctx.restore(); };
-  // nav
-  pop(CU.nav, (s) => at(540, 640, s, () => {
-    markDisc(wx + 60, 640, 26, 'navm');
-    [0, 1, 2, 3].forEach((i) => ink([[wx + 420 + i * 120, 640], [wx + 500 + i * 120, 640]], { w: 6, color: PAL.ink, amt: 0.6, key: 'nav' + i }));
+  // the real Open Stage page, assembled band by band (its header, its title, its signup form)
+  const img = asset('stage-wide.png'), k = ww / 1100, top = wy + 76;
+  const band = (t, y0, y1) => pop(t, (s) => at(540, top + (y0 + y1) / 2 * k, s, () => {
+    if (!img) return;
+    ctx.save(); ctx.shadowColor = 'rgba(35,20,10,0.28)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 6;
+    ctx.drawImage(img, 0, y0, 1100, y1 - y0, wx, top + y0 * k, ww, (y1 - y0) * k); ctx.restore();
   }));
-  // hero block: the mark and a headline
-  const HB = [wx + 40, 700, ww - 80, 320];
-  pop(CU.hero, (s) => at(540, 860, s, () => {
-    cut(rect(...HB, 8), PAL.sky, { key: 'hb', sb: 8, sy: 5, pat: pat.stripes('rgba(255,255,255,0.25)', 10, 40, 0.5) });
-    markDisc(330, 860, 112, 'hbm');
-    handText('Hello!', 490, 830, 72, PAL.ink, { key: 'hello' });
-    ink([[490, 880], [800, 880]], { w: 6, color: 'rgba(42,29,24,0.5)', frac: ev(CU.lines, 0.3), key: 'hl1' });
-    ink([[490, 912], [720, 912]], { w: 6, color: 'rgba(42,29,24,0.5)', frac: ev(CU.lines + 0.15, 0.3), key: 'hl2' });
-  }));
-  // the button: pops, then the click squishes it
-  const clickK = past(TT, CU.click) ? 1 - 0.1 * Math.exp(-(TT - CU.click) * 10) * Math.cos((TT - CU.click) * 30) : 1;
-  pop(CU.button, (s) => at(640, 975, s * clickK, () => {
-    cut(rect(540, 945, 200, 60, 28), past(TT, CU.click) ? PAL.green : PAL.teal, { key: 'btn', sb: 6, sy: 5 });
-    handText('say hi', 582, 988, 36, '#ffffff', { key: 'btnt' });
-  }));
-  // three cards
-  [PAL.pink, PAL.purple, PAL.green].forEach((c, i) => pop(CU.cards + i * 0.25, (s) => at(wx + 170 + i * 280, 1190, s, () => {
-    cut(rect(wx + 40 + i * 280, 1060, 260, 260, 8), c, { key: 'card' + i, sb: 8, sy: 5 });
-    const cx = wx + 170 + i * 280;
-    if (i === 0) cut(ellipsePts(cx, 1150, 50, 50, 0, 24), PAL.paper, { key: 'ic0', sb: 4 });
-    if (i === 1) cut([[cx - 55, 1195], [cx, 1100], [cx + 55, 1195]], PAL.paper, { key: 'ic1', sb: 4 });
-    if (i === 2) cut(rect(cx - 48, 1102, 96, 96, 6), PAL.paper, { key: 'ic2', sb: 4 });
-    ink([[cx - 90, 1255], [cx + 70, 1255]], { w: 6, color: 'rgba(255,255,255,0.8)', amt: 0.6, key: 'cl' + i });
-    ink([[cx - 90, 1285], [cx + 20, 1285]], { w: 6, color: 'rgba(255,255,255,0.8)', amt: 0.6, key: 'cm' + i });
-  })));
-  // the spark rides on the mark in the hero block
-  if (past(TT, CU.hero)) spark(330, 860, 58 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' });
-  // the cursor glides to the button and clicks
+  band(CU.nav, 0, 80);
+  band(CU.hero, 80, 395);
+  band(CU.cards, 395, 900);
+  // the click lands on the real "Singer" card
+  const TGT = [wx + 354 * k, top + 631 * k];
+  if (past(TT, CU.click) && TT < CU.click + 0.6) { ctx.strokeStyle = PAL.yellow; ctx.lineWidth = 6; ctx.strokeRect(wx + 262 * k, top + 580 * k, 184 * k, 103 * k); }
+  // the spark: a sticker on the window's corner
+  const SPK = [880, 1300];
+  if (past(TT, CU.hero)) { markDisc(SPK[0], SPK[1], 96 * popS(CU.hero), 'stk'); spark(SPK[0], SPK[1], 50 * popS(CU.hero), { rays: 7, mood: past(TT, CU.hold) ? 'wow' : past(TT, CU.click) ? 'happy' : 'smile', key: 'hero' }); }
+  // the cursor glides to the card and clicks
   if (past(TT, CU.lines)) {
-    const cx = springTrack([[CU.lines, 960], [CU.button + 0.25, 700]], SPRING.smooth), cy = springTrack([[CU.lines, 1320], [CU.button + 0.25, 990]], SPRING.smooth);
+    const cx = springTrack([[CU.lines, 960], [CU.button + 0.25, TGT[0]]], SPRING.smooth), cy = springTrack([[CU.lines, 1320], [CU.button + 0.25, TGT[1]]], SPRING.smooth);
     if (past(TT, CU.click) && TT < CU.click + 0.5) for (let i = 0; i < 6; i++) { const a = i / 6 * TAU, d = 40 + 60 * ev(CU.click, 0.3); sparkle(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 14); }
     cut([[cx, cy], [cx, cy + 74], [cx + 18, cy + 58], [cx + 32, cy + 90], [cx + 46, cy + 84], [cx + 32, cy + 52], [cx + 56, cy + 52]], '#ffffff', { key: 'cur', sb: 6, sy: 4, line: PAL.ink, lw: 4, tear: 0.4 });
   }
   stepTag('3 · build', E0 + 0.25);
-  cap('and give it a home online', E0 + 0.5);
+  cap('like Open Stage, a live jam app', E0 + 0.5);
 }
 // ---- 4. launch: the mark on a shopfront, people turn, confetti
 const SIGN = [540, 690];
@@ -71,8 +55,14 @@ function sceneLaunch() {
   cut(rect(150, 560, 780, 840, 6), PAL.brick, { key: 'shop', pat: pat.lines('rgba(90,40,30,0.18)', 34, 10) });
   cut(rect(220, 1060, 640, 300, 6), PAL.navy, { key: 'shopw', pat: (bb) => { sparkle(bb.x0 + 120, bb.y0 + 80, 22, 'rgba(255,255,255,0.7)'); sparkle(bb.x1 - 140, bb.y0 + 190, 16, 'rgba(255,255,255,0.6)'); } });
   ink([[250, 1290], [830, 1290]], { w: 8, color: PAL.woodL, amt: 0.4, key: 'wshelf' });
-  [[330, PAL.paper], [460, PAL.pinkL], [590, PAL.mint]].forEach(([x, c], i) => { cut(rect(x - 46, 1170, 92, 120, 6), c, { key: 'merch' + i, sb: 5, sy: 4 }); markDisc(x, 1222, 30, 'mm' + i); });
-  tag('open', 740, 1140, 44, { rot: 0.08, tape: false, fill: PAL.yellow });
+  // a poster of the real Open Stage page taped in the window
+  const ph = asset('stage-phone.png');
+  ctx.save(); ctx.translate(430, 1205); ctx.rotate(-0.04);
+  cut(rect(-150, -125, 300, 250, 3), PAL.paper, { key: 'poster', sb: 10, sy: 6 });
+  if (ph) ctx.drawImage(ph, 0, 0, 780, 640, -136, -112, 272, 223);
+  cut(rect(-40, -140, 80, 30, 2), 'rgba(240,230,190,0.8)', { key: 'ptape', shadow: false, grain: 0.3, shade: false });
+  ctx.restore();
+  tag('jam tonight', 700, 1180, 40, { rot: 0.08, tape: false, fill: PAL.yellow });
   cut(rect(120, 900, 840, 110, 6), PAL.teal, { key: 'awn', pat: pat.stripes('rgba(255,255,255,0.85)', 50, 100) });
   for (let i = 0; i < 8; i++) cut(ellipsePts(172 + i * 105, 1010, 53, 30, 0, 18, 0, Math.PI), i % 2 ? '#ffffff' : PAL.teal, { key: 'sc' + i, sb: 4 });
   // the sign: hung from a bracket, lands with a bounce on the cut

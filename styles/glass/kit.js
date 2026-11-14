@@ -206,7 +206,7 @@ function gxTitle(lines, x, y, size, o = {}) {
     const u = EZ.o3 ? EZ.o3(clamp((TT - t0 - i * 0.12) / 0.55)) : clamp((TT - t0 - i * 0.12) / 0.55);
     if (u <= 0) return;
     const yy = y + i * size * lh, w = ctx.measureText(ln).width, x0 = al === 'center' ? x - w / 2 : x;
-    ctx.save(); ctx.beginPath(); ctx.rect(x0 - 20, yy - size * 1.0, w + 40, size * 1.25); ctx.clip();
+    ctx.save(); ctx.beginPath(); ctx.rect(x0 - 20, yy - size * 1.0, w + 40, size * 1.38); ctx.clip();
     ctx.translate(0, (1 - u) * size * 0.9);
     let xx = x0;
     for (const word of ln.split(/(\s+)/)) { ctx.fillStyle = (o.accent && o.accent[word.replace(/[.,!?]/g, '')]) || o.color || GX.ink; ctx.fillText(word, xx, yy); xx += ctx.measureText(word).width; }

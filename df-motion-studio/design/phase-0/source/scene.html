@@ -1,0 +1,116 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#16130f}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// --- DF monogram as extruded shapes (placeholder for the real logo file) ---
+function dShape() {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0); s.lineTo(0.62, 0);
+  s.absarc(0.62, 1.0, 1.0, -Math.PI / 2, Math.PI / 2, false);
+  s.lineTo(0, 2.0); s.lineTo(0, 0);
+  const h = new THREE.Path();
+  h.moveTo(0.42, 0.42); h.lineTo(0.62, 0.42);
+  h.absarc(0.62, 1.0, 0.58, -Math.PI / 2, Math.PI / 2, false);
+  h.lineTo(0.42, 1.58); h.lineTo(0.42, 0.42);
+  s.holes.push(h);
+  return s;
+}
+function fShape() {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0); s.lineTo(0.42, 0); s.lineTo(0.42, 0.82); s.lineTo(1.18, 0.82);
+  s.lineTo(1.18, 1.22); s.lineTo(0.42, 1.22); s.lineTo(0.42, 1.58); s.lineTo(1.38, 1.58);
+  s.lineTo(1.38, 2.0); s.lineTo(0, 2.0); s.lineTo(0, 0);
+  return s;
+}
+const extr = { depth: 0.38, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.045, bevelSegments: 6, curveSegments: 48 };
+
+const scene = new THREE.Scene();
+const mono = new THREE.Group();
+const metal = new THREE.MeshPhysicalMaterial({ color: 0xd9cbb4, metalness: 1, roughness: 0.22, clearcoat: 0.6, clearcoatRoughness: 0.15 });
+const dark = new THREE.MeshPhysicalMaterial({ color: 0x2a2520, metalness: 0.2, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.08 });
+const D = new THREE.Mesh(new THREE.ExtrudeGeometry(dShape(), extr), metal);
+const F = new THREE.Mesh(new THREE.ExtrudeGeometry(fShape(), extr), dark);
+F.position.x = 1.86;
+[D, F].forEach(m => { m.castShadow = true; m.receiveShadow = true; mono.add(m); });
+mono.position.set(-1.62, 0.52, -0.19);
+const monoPivot = new THREE.Group(); monoPivot.add(mono); scene.add(monoPivot);
+
+// plinth + floor + backdrop sweep
+const plinth = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.5, 2.2, 6, 0.12),
+  new THREE.MeshPhysicalMaterial({ color: 0x3a332c, roughness: 0.55, metalness: 0.0, clearcoat: 0.3 }));
+plinth.position.y = 0.25; plinth.castShadow = plinth.receiveShadow = true; scene.add(plinth);
+
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x241f1a, roughness: 0.9 });
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+// cyclorama curve
+const curve = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 30, 64, 1, true, Math.PI, Math.PI),
+  new THREE.MeshStandardMaterial({ color: 0x231e19, roughness: 0.95, side: THREE.BackSide }));
+curve.rotation.z = Math.PI / 2; curve.position.set(0, 6, -6); scene.add(curve);
+
+// small orbiting sphere (motion element)
+const orb = new THREE.Mesh(new THREE.SphereGeometry(0.34, 64, 64),
+  new THREE.MeshPhysicalMaterial({ color: 0xf2a541, roughness: 0.15, metalness: 0.0, transmission: 0.0, clearcoat: 1, emissive: 0xf2a541, emissiveIntensity: 0.25 }));
+orb.castShadow = true; scene.add(orb);
+
+// lights
+const key = new THREE.SpotLight(0xffd7a8, 120, 30, 0.55, 0.6, 1.6);
+key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 6; key.shadow.bias = -0.0004;
+const fill = new THREE.DirectionalLight(0xbfd2ff, 0.5);
+const rim = new THREE.SpotLight(0xffb36b, 160, 30, 0.5, 0.8, 1.4);
+scene.add(key, key.target, fill, rim, rim.target);
+const amb = new THREE.HemisphereLight(0x8a7f72, 0x16130f, 0.25); scene.add(amb);
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+
+const PRESETS = {
+  studio: { bg: 0x1d1915, fog: [0x1d1915, 10, 26], env: 0.55, key: [3.5, 6, 5], keyI: 120, keyC: 0xffd7a8, rim: [-4, 4, -4], rimI: 160, rimC: 0xffb36b, fill: 0.5 },
+  dusk:   { bg: 0x241a1f, fog: [0x2b1d22, 8, 22], env: 0.35, key: [-4, 4, 4], keyI: 90, keyC: 0xff9f7a, rim: [4, 5, -4], rimI: 220, rimC: 0x8fa6ff, fill: 0.25 },
+  noir:   { bg: 0x121110, fog: [0x121110, 7, 18], env: 0.15, key: [0.5, 7, 3], keyI: 200, keyC: 0xfff1de, rim: [0, 3, -5], rimI: 120, rimC: 0xfff1de, fill: 0.05 },
+  daylight:{ bg: 0x3a3631, fog: [0x3a3631, 12, 34], env: 0.9, key: [5, 8, 6], keyI: 140, keyC: 0xfff4e6, rim: [-5, 4, -3], rimI: 60, rimC: 0xdfe8ff, fill: 0.9 },
+};
+
+window.renderShot = ({ w, h, preset = 'studio', camPos = [0, 2.2, 9.5], look = [0, 1.45, 0], fov = 30, rotY = -0.18, orbT = 0.3 }) => {
+  const p = PRESETS[preset];
+  renderer.setPixelRatio(1); renderer.setSize(w, h);
+  scene.background = new THREE.Color(p.bg);
+  scene.fog = new THREE.Fog(...p.fog);
+  scene.environment = envTex; scene.environmentIntensity = p.env;
+  floorMat.color.set(p.bg).multiplyScalar(1.15);
+  curve.material.color.set(p.bg).multiplyScalar(1.1);
+  key.position.set(...p.key); key.intensity = p.keyI; key.color.set(p.keyC); key.target.position.set(0, 1.3, 0);
+  rim.position.set(...p.rim); rim.intensity = p.rimI; rim.color.set(p.rimC); rim.target.position.set(0, 1.4, 0);
+  fill.position.set(-5, 3, 6); fill.intensity = p.fill;
+  monoPivot.rotation.y = rotY;
+  const a = orbT * Math.PI * 2;
+  orb.position.set(Math.cos(a) * 2.9, 1.15 + Math.sin(a * 2) * 0.35, Math.sin(a) * 1.6 + 0.6);
+  camera.fov = fov; camera.aspect = w / h; camera.position.set(...camPos); camera.lookAt(...look); camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  // logo safe-area check: project bbox corners, report min margin as fraction of frame
+  scene.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(mono);
+  let minX=1,maxX=-1,minY=1,maxY=-1;
+  for (const x of [box.min.x,box.max.x]) for (const y of [box.min.y,box.max.y]) for (const z of [box.min.z,box.max.z]) {
+    const v = new THREE.Vector3(x,y,z).project(camera);
+    minX=Math.min(minX,v.x);maxX=Math.max(maxX,v.x);minY=Math.min(minY,v.y);maxY=Math.max(maxY,v.y);
+  }
+  const margin = Math.min(minX+1, 1-maxX, minY+1, 1-maxY)/2;
+  return { url: renderer.domElement.toDataURL('image/png'), margin, ndc:[minX,maxX,minY,maxY] };
+};
+window.ready = true;
+</script></body></html>

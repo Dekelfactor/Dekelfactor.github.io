@@ -1,0 +1,112 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+.head { position: absolute; top: var(--safe-top); left: 0; right: 0; height: 52px; display: flex; align-items: center; padding: 0 6px 0 4px; }
+.head .t { flex: 1; font: 400 21px/1 var(--serif); letter-spacing: -0.01em; }
+.top { position: absolute; top: 103px; left: 16px; right: 16px; height: 286px; display: grid; grid-template-columns: 160px 1fr; gap: 18px; }
+.frame { width: 160px; height: 284px; border-radius: 8px; overflow: hidden; position: relative; box-shadow: 0 0 0 1px var(--line-2); }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame .play { position: absolute; left: 8px; bottom: 8px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+.frame .play svg { width: 16px; height: 16px; margin-left: 2px; }
+.frame .tc { position: absolute; right: 10px; bottom: 22px; font-size: 11px; color: var(--ink-2); }
+.beats h2 { font: 400 15px/1.2 var(--serif); font-style: italic; color: var(--ink-2); margin: 2px 0 10px; }
+.beat { display: grid; grid-template-columns: 40px 1fr; gap: 4px; padding: 10px 0; border-top: 1px solid var(--line); min-height: 44px; }
+.beat .mono { font-size: 11px; color: var(--ink-3); padding-top: 2px; }
+.beat b { display: block; font: 500 13.5px/1.25 var(--sans); }
+.beat span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; line-height: 1.35; }
+.beat.now .mono { color: var(--accent); }
+.beat.now b { color: var(--ink); }
+
+.pads { position: absolute; top: 404px; left: 16px; right: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: 18px; overflow: hidden; }
+.pad { background: var(--char-1); height: 132px; padding: 12px 12px 10px; position: relative; display: flex; flex-direction: column; text-align: left; }
+.pad .lab { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); }
+.pad .lab .mono { font-size: 11px; color: var(--ink-3); }
+.pad .area { flex: 1; position: relative; margin-top: 8px; }
+.xy { position: absolute; inset: 0; border-radius: 10px; background: radial-gradient(circle at 50% 50%, rgba(237,228,214,.05), transparent 70%); }
+.xy::before, .xy::after { content: ''; position: absolute; background: var(--line); }
+.xy::before { left: 50%; top: 0; bottom: 0; width: 1px; } .xy::after { top: 50%; left: 0; right: 0; height: 1px; }
+.puck { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 7px rgba(237,228,214,.1); }
+.puck.acc { background: var(--accent); box-shadow: 0 0 0 7px rgba(242,165,65,.18); }
+.trail { position: absolute; inset: 0; }
+.envs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; height: 100%; }
+.envs div { border-radius: 8px; overflow: hidden; position: relative; }
+.envs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.envs .on { box-shadow: 0 0 0 2px var(--ink); }
+
+.propose { position: absolute; top: 683px; left: 16px; right: 16px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.propose p { flex: 1; }
+.propose p b { color: var(--ink); font-weight: 500; }
+.propose .pill { height: 44px; padding: 0 14px; background: rgba(237,228,214,.07); color: var(--ink); }
+
+.prompt { position: absolute; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 8px); height: 60px; border-radius: 30px; display: flex; align-items: center; padding: 0 8px 0 6px; gap: 2px; background: var(--char-2); box-shadow: 0 0 0 1px var(--line-2); }
+.prompt .field { flex: 1; font-size: 15px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
+.prompt .field::after { content: ''; display: inline-block; width: 2px; height: 18px; background: var(--accent); vertical-align: -3px; margin-left: 2px; }
+.prompt .ib { color: var(--ink-2); }
+.send { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.send svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style></head><body>
+<main class="phone">
+  <header class="head">
+    <button class="ib" aria-label="Back to projects" data-i="back"></button>
+    <span class="t">Studio reveal</span>
+    <button class="ib" aria-label="Copy project for Claude" data-i="copy"></button>
+    <button class="ib" aria-label="Undo" data-i="undo"></button>
+    <button class="pill btn-accent" aria-label="Export video">Export</button>
+  </header>
+
+  <section class="top">
+    <div class="frame grain">
+      <img src="assets/hero.png" alt="Preview frame">
+      <button class="play glass" aria-label="Play"><svg aria-hidden="true"><use href="#i-play"/></svg></button>
+      <span class="tc mono">2.1 / 6.0s</span>
+    </div>
+    <div class="beats" aria-label="Shot beats">
+      <h2>Three beats, six seconds</h2>
+      <div class="beat"><span class="mono">0.0s</span><div><b>Lights up</b><span>Rim fades in from black</span></div></div>
+      <div class="beat now"><span class="mono">1.8s</span><div><b>Monogram settles</b><span>Overshoot, slow dolly in</span></div></div>
+      <div class="beat"><span class="mono">4.2s</span><div><b>Orbit and hold</b><span>Orb circles, 20° camera arc</span></div></div>
+    </div>
+  </section>
+
+  <section class="pads" aria-label="Control pads">
+    <button class="pad" aria-label="Camera pad: drag to orbit, pinch to dolly">
+      <span class="lab"><span>Camera</span><span class="mono">35mm f/2.8</span></span>
+      <span class="area"><span class="xy"></span>
+        <svg class="trail" viewBox="0 0 150 80" preserveAspectRatio="none" aria-hidden="true"><path d="M20 62 C 50 60, 70 40, 96 30" stroke="rgba(237,228,214,.35)" stroke-width="1.5" fill="none" stroke-dasharray="3 4"/></svg>
+        <span class="puck" style="left:64%;top:38%"></span></span>
+    </button>
+    <button class="pad" aria-label="Light pad: drag to place the key light">
+      <span class="lab"><span>Key light</span><span class="mono">3200 K</span></span>
+      <span class="area"><span class="xy" style="border-radius:50%;left:22%;right:22%;box-shadow:inset 0 0 0 1px var(--line)"></span>
+        <span class="puck acc" style="left:36%;top:30%"></span></span>
+    </button>
+    <div class="pad" role="group" aria-label="Mood: environment presets">
+      <span class="lab"><span>Mood</span><span class="mono">Studio</span></span>
+      <span class="area"><span class="envs">
+        <div class="on"><img src="assets/env-studio.png" alt="Studio"></div><div><img src="assets/env-dusk.png" alt="Dusk"></div><div><img src="assets/env-noir.png" alt="Noir"></div><div><img src="assets/env-daylight.png" alt="Daylight"></div>
+      </span></span>
+    </div>
+    <button class="pad" aria-label="Motion pad: choose a curve preset">
+      <span class="lab"><span>Motion</span><span class="mono">Overshoot</span></span>
+      <span class="area">
+        <svg class="trail" viewBox="0 0 150 80" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 79.5H150" stroke="rgba(237,228,214,.09)"/><path d="M0 14H150" stroke="rgba(237,228,214,.09)" stroke-dasharray="2 4"/>
+          <path d="M4 76 C 40 74, 52 -6, 84 6 S 120 16, 146 14" stroke="#ede4d6" stroke-width="2" fill="none"/>
+        </svg>
+        <span class="puck" style="left:56%;top:4%;width:14px;height:14px;margin:-7px 0 0 -7px"></span>
+      </span>
+    </button>
+  </section>
+
+  <div class="propose" role="status">
+    <p><b>Claude changed 4 keyframes.</b> Dolly ends 0.6s later, rim warmed to 3200 K.</p>
+    <button class="pill">Undo</button>
+  </div>
+
+  <form class="prompt" aria-label="Direct the shot">
+    <button type="button" class="ib" aria-label="Dictate" data-i="mic"></button>
+    <span class="field" role="textbox" aria-label="Describe a change">Hold the logo longer before the orbit</span>
+    <button type="submit" class="send" aria-label="Send to Claude"><svg aria-hidden="true"><use href="#i-send"/></svg></button>
+  </form>
+</main>
+<script src="chrome.js"></script>
+</body></html>

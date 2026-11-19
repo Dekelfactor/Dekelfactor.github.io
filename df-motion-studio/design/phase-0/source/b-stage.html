@@ -1,0 +1,138 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+.viewport { position: absolute; inset: 0; }
+.viewport img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.viewport::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(21,18,15,.55) 0%, transparent 18%, transparent 52%, rgba(21,18,15,.4) 100%); z-index: 1; }
+.top { position: absolute; top: calc(var(--safe-top) + 4px); left: 12px; right: 12px; height: 52px; border-radius: 26px; display: flex; align-items: center; padding: 0 3px; gap: 0; z-index: 5; }
+.top .t { flex: 1; font: 400 18px/1 var(--serif); padding-left: 2px; letter-spacing: -0.01em; }
+.top .ratio { height: 44px; padding: 0 12px; display: grid; place-items: center; font: 500 12px/1 var(--mono); color: var(--ink-2); }
+.top .btn-accent { height: 44px; margin-right: 0; }
+/* the export button is 40px visually; its hit area extends to 44 via padding box */
+.top .btn-accent { position: relative; }
+.rail { position: absolute; right: 12px; top: 128px; width: 52px; border-radius: 26px; padding: 4px; display: flex; flex-direction: column; gap: 2px; z-index: 5; }
+.rail .ib { color: var(--ink-2); border-radius: 22px; }
+.rail .ib.on { background: rgba(242,165,65,.16); color: var(--accent); }
+.gizmo { position: absolute; left: 16px; top: 128px; width: 60px; height: 60px; z-index: 5; }
+.hint { position: absolute; left: 50%; top: 404px; transform: translateX(-50%); height: 30px; padding: 0 12px; border-radius: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); z-index: 5; white-space: nowrap; }
+.hint svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+/* selection bounds on the light gizmo in viewport */
+.lightpin { position: absolute; z-index: 4; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--accent); background: rgba(242,165,65,.18); }
+.lightpin::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.lightpin span { position: absolute; left: 36px; font: 500 11px/1 var(--sans); color: var(--accent); white-space: nowrap; }
+.beam { position: absolute; z-index: 3; height: 1px; background: linear-gradient(90deg, rgba(242,165,65,.7), rgba(242,165,65,0)); transform-origin: 0 0; }
+
+.scrub { position: absolute; left: 12px; right: 12px; top: 448px; height: 52px; border-radius: 26px; display: flex; align-items: center; padding: 0 4px 0 4px; z-index: 6; gap: 4px; }
+.scrub .play { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--char-0); display: grid; place-items: center; flex: none; }
+.scrub .play svg { width: 18px; height: 18px; margin-left: 2px; }
+.bar { flex: 1; height: 44px; position: relative; }
+.bar .track { position: absolute; left: 0; right: 0; top: 21px; height: 2px; background: var(--line-2); border-radius: 1px; }
+.bar .fill { position: absolute; left: 0; width: 36%; top: 21px; height: 2px; background: var(--ink); border-radius: 1px; }
+.bar .kf { top: 22px; }
+.bar .ph { position: absolute; left: 36%; top: 9px; width: 3px; height: 26px; margin-left: -1.5px; background: var(--accent); border-radius: 2px; }
+.scrub .tc { font-size: 12px; color: var(--ink-2); padding: 0 10px 0 6px; }
+
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 334px; padding-bottom: var(--safe-bottom) !important; border-radius: 28px 28px 0 0; z-index: 7; border-bottom: 0; border-left: 0; border-right: 0; padding: 8px 20px 0; }
+.grab { width: 36px; height: 5px; border-radius: 3px; background: var(--ink-3); margin: 0 auto 10px; }
+.seg { display: flex; gap: 4px; margin-bottom: 12px; }
+.seg button { height: 44px; flex: 1; border-radius: 14px; font: 500 13px/1 var(--sans); color: var(--ink-3); }
+.seg button.on { background: rgba(237,228,214,.08); color: var(--ink); }
+.panel { display: grid; grid-template-columns: 148px 1fr; gap: 20px; align-items: start; }
+.dome { width: 148px; height: 148px; position: relative; }
+.dome svg { position: absolute; inset: 0; }
+.dot { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: grid; place-items: center; }
+.dot i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--ink); background: var(--char-1); }
+.dot.key i { width: 20px; height: 20px; background: var(--accent); border-color: rgba(237,228,214,.9); box-shadow: 0 0 0 6px rgba(242,165,65,.2), 0 0 24px rgba(242,165,65,.5); }
+.dot b { position: absolute; top: 36px; font: 500 10.5px/1 var(--sans); color: var(--ink-2); }
+.row { margin-bottom: 15px; }
+.row .lab { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); margin-bottom: 9px; }
+.row .lab .mono { color: var(--ink); font-size: 12px; }
+.slider { height: 4px; border-radius: 2px; background: var(--line-2); position: relative; }
+.slider .f { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--ink); }
+.slider .k { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: var(--ink); box-shadow: 0 1px 6px rgba(21,18,15,.5); }
+.slider.temp { background: linear-gradient(90deg, #ffb066, #fff2df 55%, #b9cdfb); height: 6px; }
+.lightlist { display: flex; gap: 6px; margin-top: 10px; }
+.lightlist button { height: 44px; padding: 0 12px; border-radius: 12px; font-size: 12.5px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; background: rgba(237,228,214,.05); }
+.lightlist button.on { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+.lightlist i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.lightlist .on i { background: var(--accent); }
+</style></head><body>
+<main class="phone">
+  <div class="viewport grain"><img src="assets/stage.png" alt="3D stage: DF monogram on a plinth"></div>
+
+  <header class="top glass">
+    <button class="ib" aria-label="Back to projects" data-i="back"></button>
+    <span class="t">Studio reveal</span>
+    <button class="ratio" aria-label="Aspect ratio 9 by 16">9:16</button>
+    <button class="ib" aria-label="Undo" data-i="undo"></button>
+    <button class="pill btn-accent" aria-label="Export video">Export</button>
+  </header>
+
+  <svg class="gizmo" viewBox="0 0 60 60" aria-hidden="true">
+    <circle cx="30" cy="30" r="27" fill="rgba(29,25,21,.55)" stroke="rgba(237,228,214,.16)"/>
+    <line x1="30" y1="30" x2="47" y2="38" stroke="#ede4d6" stroke-opacity=".5" stroke-width="1.5"/>
+    <line x1="30" y1="30" x2="30" y2="11" stroke="#ede4d6" stroke-width="1.5"/>
+    <line x1="30" y1="30" x2="15" y2="40" stroke="#ede4d6" stroke-opacity=".5" stroke-width="1.5"/>
+    <circle cx="30" cy="11" r="4" fill="#ede4d6"/><circle cx="47" cy="38" r="3.5" fill="#ede4d6" fill-opacity=".55"/><circle cx="15" cy="40" r="3.5" fill="#ede4d6" fill-opacity=".55"/>
+    <text x="30" y="56" fill="#ede4d6" fill-opacity=".55" font-size="7" text-anchor="middle" font-family="Geist">Orbit</text>
+  </svg>
+
+  <nav class="rail glass" aria-label="Scene tools">
+    <button class="ib" aria-label="Move layer" data-i="move"></button>
+    <button class="ib" aria-label="Camera" data-i="camera"></button>
+    <button class="ib on" aria-label="Lights" data-i="light"></button>
+    <button class="ib" aria-label="Scene and environment" data-i="scene"></button>
+    <button class="ib" aria-label="Effects" data-i="fx"></button>
+    <button class="ib" aria-label="Layers" data-i="layers"></button>
+  </nav>
+
+  <div class="beam" style="left:115px;top:135px;width:92px;transform:rotate(54deg)"></div>
+  <div class="lightpin" style="left:100px;top:120px"><span>Key light</span></div>
+
+  <div class="hint glass" style="border-radius:15px">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/></svg>Two fingers to orbit
+  </div>
+
+  <div class="scrub glass" role="group" aria-label="Playback">
+    <button class="play" aria-label="Play"><svg aria-hidden="true"><use href="#i-play"/></svg></button>
+    <div class="bar" role="slider" aria-label="Scrub" aria-valuenow="2.14" aria-valuemin="0" aria-valuemax="6">
+      <div class="track"></div><div class="fill"></div>
+      <span class="kf" style="left:8%"></span><span class="kf on" style="left:36%;margin-left:-4.5px"></span><span class="kf" style="left:68%"></span><span class="kf" style="left:92%"></span>
+      <div class="ph"></div>
+    </div>
+    <span class="tc mono">00:02.14</span>
+  </div>
+
+  <section class="sheet glass" aria-label="Light inspector">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="seg" role="tablist">
+      <button class="on" role="tab" aria-selected="true">Light</button><button role="tab">Camera</button><button role="tab">Scene</button><button role="tab">Effects</button>
+    </div>
+    <div class="panel">
+      <div class="dome" aria-label="Light dome: drag a light to position it">
+        <svg viewBox="0 0 148 148" aria-hidden="true">
+          <defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#332d26"/><stop offset="1" stop-color="#1d1915"/></radialGradient></defs>
+          <circle cx="74" cy="74" r="72" fill="url(#g)" stroke="rgba(237,228,214,.16)"/>
+          <circle cx="74" cy="74" r="48" fill="none" stroke="rgba(237,228,214,.08)"/>
+          <circle cx="74" cy="74" r="24" fill="none" stroke="rgba(237,228,214,.08)"/>
+          <line x1="2" y1="74" x2="146" y2="74" stroke="rgba(237,228,214,.06)"/><line x1="74" y1="2" x2="74" y2="146" stroke="rgba(237,228,214,.06)"/>
+          <rect x="66" y="70" width="16" height="8" rx="2" fill="rgba(237,228,214,.35)"/>
+          <text x="74" y="142" fill="rgba(237,228,214,.36)" font-size="8" text-anchor="middle" font-family="Geist">Front</text>
+        </svg>
+        <div class="dot key" style="left:44px;top:40px"><i></i></div>
+        <div class="dot" style="left:118px;top:62px"><i></i></div>
+        <div class="dot" style="left:84px;top:14px"><i style="border-style:dashed"></i></div>
+      </div>
+      <div>
+        <div class="row"><div class="lab"><span>Intensity</span><span class="mono">1.40</span></div><div class="slider"><div class="f" style="width:58%"></div><div class="k" style="left:58%"></div></div></div>
+        <div class="row"><div class="lab"><span>Temperature</span><span class="mono">3200 K</span></div><div class="slider temp"><div class="k" style="left:22%"></div></div></div>
+        <div class="row"><div class="lab"><span>Softness</span><span class="mono">0.65</span></div><div class="slider"><div class="f" style="width:65%"></div><div class="k" style="left:65%"></div></div></div>
+      </div>
+    </div>
+    <div class="lightlist">
+      <button class="on"><i></i>Key</button><button><i></i>Fill</button><button><i></i>Rim</button>
+      <button aria-label="Add keyframe for this light" style="margin-left:auto;color:var(--accent)"><svg width="16" height="16" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:1.8"><use href="#i-diamond"/></svg>Keyframe</button>
+    </div>
+  </section>
+</main>
+<script src="chrome.js"></script>
+</body></html>

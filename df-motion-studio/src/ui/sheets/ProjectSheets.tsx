@@ -97,7 +97,7 @@ export function ProjectSheet() {
       </button>
       <QualityRow />
       <DeleteData />
-      <p className="hint legal-links"><a href="./privacy.html">Privacy</a> <a href="./terms.html">Terms</a> <span>Made with Remotion, three.js and open-source fonts (OFL).</span></p>
+      <p className="hint" style={{ marginTop: 18 }}>Private tool. Projects and media stay on this device. Made with Remotion, three.js and open-source fonts (OFL).</p>
       {errors.length ? <ul className="errors" role="alert">{errors.map(e => <li key={e}>{e}</li>)}</ul> : null}
     </Sheet>
   );

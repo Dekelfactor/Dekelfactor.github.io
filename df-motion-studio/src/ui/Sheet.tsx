@@ -20,11 +20,15 @@ export function Sheet({ title, children, actions, label, tool }: { title: string
 
   useEffect(() => {
     if (docked) return;
+    const opener = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     window.addEventListener('keydown', onKey);
     ref.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
     ref.current?.querySelector<HTMLElement>('.tool-tabs .on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (opener && document.contains(opener) && !ref.current?.isConnected) opener.focus({ preventScroll: true });
+    };
   }, [docked]);
 
   const onDown = (e: React.PointerEvent) => {

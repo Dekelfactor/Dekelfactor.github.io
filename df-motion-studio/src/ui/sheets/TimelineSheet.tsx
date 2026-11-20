@@ -9,7 +9,7 @@ import { seek } from '../player';
 import { CurveEditor, ownerOf } from '../CurveEditor';
 import { toast } from '../Chrome';
 
-const ROW = 44, RULER = 28, PADR = 40;
+const ROW = 48, RULER = 28, PADR = 40;
 /** left gutter so keys at 0 s are fully visible and tappable */
 const PADL = 16;
 const TYPE_ICON: Record<Layer['type'], string> = { text: 'text', shape: 'shape', model: 'cube', image: 'image', video: 'film', audio: 'audio' };

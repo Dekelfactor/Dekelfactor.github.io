@@ -96,6 +96,8 @@ export function ProjectSheet() {
         <Icon name="file" /><span>New blank project<small>Keeps the studio lights, removes all layers</small></span>
       </button>
       <QualityRow />
+      <DeleteData />
+      <p className="hint legal-links"><a href="./privacy.html">Privacy</a> <a href="./terms.html">Terms</a> <span>Made with Remotion, three.js and open-source fonts (OFL).</span></p>
       {errors.length ? <ul className="errors" role="alert">{errors.map(e => <li key={e}>{e}</li>)}</ul> : null}
     </Sheet>
   );
@@ -148,5 +150,31 @@ export function ExportSheet() {
         <li><span>The MP4 appears in <span className="mono">out/</span>.</span></li>
       </ol>
     </Sheet>
+  );
+}
+
+/** Erases everything this app stores in the browser. Two taps, no dark patterns. */
+function DeleteData() {
+  const [armed, setArmed] = useState(false);
+  const erase = async () => {
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith('dfms:')).forEach(k => localStorage.removeItem(k));
+      await new Promise<void>(res => { const r = indexedDB.deleteDatabase('dfms-assets'); r.onsuccess = r.onerror = r.onblocked = () => res(); });
+    } catch { /* storage may be unavailable */ }
+    location.reload();
+  };
+  return (
+    <div className="field" style={{ marginTop: 8 }}>
+      {armed ? (
+        <div className="row">
+          <button className="btn danger" onClick={erase}>Delete project and media</button>
+          <button className="btn quiet" onClick={() => setArmed(false)}>Keep them</button>
+        </div>
+      ) : (
+        <button className="list-btn" onClick={() => setArmed(true)}>
+          <Icon name="trash" /><span>Delete all data on this device<small>Removes the saved project, imported media and preferences</small></span>
+        </button>
+      )}
+    </div>
   );
 }

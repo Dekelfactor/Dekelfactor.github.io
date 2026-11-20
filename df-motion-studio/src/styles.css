@@ -12,8 +12,8 @@
   --char-2: #27221d;
   --char-3: #332d26;
   --ink: #ede4d6;
-  --ink-2: rgba(237, 228, 214, 0.64);
-  --ink-3: rgba(237, 228, 214, 0.40);
+  --ink-2: rgba(237, 228, 214, 0.74);
+  --ink-3: rgba(237, 228, 214, 0.58); /* 4.7:1 minimum on every surface (WCAG AA) */
   --line: rgba(237, 228, 214, 0.09);
   --line-2: rgba(237, 228, 214, 0.16);
   --accent: #f2a541;
@@ -220,13 +220,13 @@ textarea.paste {
 .keybtn.anim { color: var(--ink-2); }
 .keybtn.on { color: var(--accent); }
 .keybtn.on svg { fill: var(--accent); }
-.slider { position: relative; height: 36px; touch-action: none; cursor: pointer; }
-.slider-track { position: absolute; left: 0; right: 0; top: 16px; height: 4px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.slider { position: relative; height: 44px; touch-action: none; cursor: pointer; }
+.slider-track { position: absolute; left: 0; right: 0; top: 20px; height: 4px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
 .slider-fill { height: 100%; background: var(--ink); }
-.slider-knob { position: absolute; top: 8px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--ink); box-shadow: 0 1px 6px rgba(10, 8, 6, 0.5); transition: transform 120ms var(--ease-out); pointer-events: none; }
+.slider-knob { position: absolute; top: 12px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--ink); box-shadow: 0 1px 6px rgba(10, 8, 6, 0.5); transition: transform 120ms var(--ease-out); pointer-events: none; }
 .slider:active .slider-knob { transform: scale(1.12); }
 .vec { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.axis { display: flex; align-items: center; height: 44px; border-radius: 12px; background: var(--char-0); border: 1px solid var(--line); overflow: hidden; }
+.axis { display: flex; align-items: center; height: 46px; border-radius: 12px; background: var(--char-0); border: 1px solid var(--line); overflow: hidden; }
 .axis-grip { width: 28px; height: 100%; display: grid; place-items: center; font: 500 11px/1 var(--mono); color: var(--ink-3); cursor: ew-resize; touch-action: none; flex: none; }
 .axis input { width: 100%; min-width: 0; height: 100%; background: none; border: 0; font-size: 13px; color: var(--ink); padding-right: 6px; }
 .swatch { width: 44px; height: 44px; border: 0; padding: 6px; background: none; border-radius: 12px; cursor: pointer; }
@@ -240,7 +240,7 @@ textarea.paste {
 .toggle-row[aria-checked='true'] .switch::after { transform: translateX(18px); background: var(--char-0); }
 .section-title { font: 400 italic 15px/1.2 var(--serif); color: var(--ink-2); margin: 18px 0 6px; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip-btn { min-height: 40px; padding: 0 14px; border-radius: 20px; font-size: 13px; color: var(--ink-2); background: rgba(237, 228, 214, 0.06); transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out); }
+.chip-btn { min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 22px; font-size: 13px; color: var(--ink-2); background: rgba(237, 228, 214, 0.06); transition: background-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out); }
 .chip-btn[aria-pressed='true'] { background: var(--ink); color: var(--char-0); }
 .chip-btn:active { transform: scale(0.96); }
 
@@ -260,7 +260,7 @@ textarea.paste {
 .tl-row { position: relative; height: var(--row); border-top: 1px solid var(--line); }
 .tl-lane-label { position: absolute; left: 8px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 11.5px; color: var(--ink-3); pointer-events: none; }
 .tl-clip {
-  position: absolute; top: 5px; bottom: 5px; border-radius: 8px; display: flex; align-items: center; padding: 0 12px;
+  position: absolute; top: 1px; bottom: 1px; border-radius: 8px; display: flex; align-items: center; padding: 0 12px;
   font: 500 12px/1 var(--sans); color: var(--ink); white-space: nowrap; overflow: hidden; cursor: pointer;
   transition: box-shadow 160ms ease;
 }
@@ -364,3 +364,9 @@ textarea.paste {
 @media (hover: hover) and (pointer: fine) {
   .chip-btn:hover, .add-btn:hover, .list-btn:hover, .layer-main:hover { background: rgba(237, 228, 214, 0.08); }
 }
+
+.mobile-main { position: absolute; inset: 0; }
+
+.btn.danger { background: rgba(240, 122, 98, 0.16); color: var(--danger); }
+.legal-links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
+.legal-links a { color: var(--ink); min-height: 44px; display: inline-flex; align-items: center; text-underline-offset: 3px; }

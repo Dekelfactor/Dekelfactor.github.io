@@ -91,14 +91,14 @@ function DesktopApp() {
     <div className="desk">
       <TopBar />
       <DockedContext.Provider value={true}>
-        <aside className="desk-left"><LayersSheet /></aside>
+        <aside className="desk-left" aria-label="Layers panel"><LayersSheet /></aside>
         <main className="desk-center">
           <PreviewBoundary><Viewport insets={{ top: 16, bottom: 150, left: 20, right: 20 }} /></PreviewBoundary>
-          <div className="dock desk-dock"><NoticeLine /><ScrubBar /><PromptBar /></div>
+          <div className="dock desk-dock" role="region" aria-label="Playback and Claude"><NoticeLine /><ScrubBar /><PromptBar /></div>
           <OrbitHint />
         </main>
-        <aside className="desk-right"><SheetFor id={right} /></aside>
-        <section className="desk-bottom"><TimelineSheet /></section>
+        <aside className="desk-right" aria-label="Inspector panel"><SheetFor id={right} /></aside>
+        <section className="desk-bottom" aria-label="Timeline panel"><TimelineSheet /></section>
       </DockedContext.Provider>
       <Toast />
     </div>
@@ -133,16 +133,18 @@ function MobileApp() {
 
   return (
     <div className="app">
-      <PreviewBoundary><Viewport insets={insets} /></PreviewBoundary>
+      <main className="mobile-main" aria-label="Preview">
+        <PreviewBoundary><Viewport insets={insets} /></PreviewBoundary>
+        {sheetOpen ? null : <OrbitHint />}
+      </main>
       <TopBar />
       {sheetOpen ? null : <Rail />}
-      <div className="dock" ref={dockRef} style={sheetOpen ? { bottom: bottomOffset } : undefined}>
+      <div className="dock" role="region" aria-label="Playback and Claude" ref={dockRef} style={sheetOpen ? { bottom: bottomOffset } : undefined}>
         <NoticeLine />
         <ScrubBar />
         {sheetOpen ? null : <PromptBar />}
       </div>
       <SheetFor id={sheet} />
-      {sheetOpen ? null : <OrbitHint />}
       <Toast />
     </div>
   );

@@ -4,6 +4,7 @@ import { ASPECT_SIZE, parseProject, type Aspect } from '../../schema/project';
 import { createBlankProject, createSampleProject } from '../../schema/defaults';
 import { buildClaudePayload, extractProject, summarizeChanges } from '../../lib/claude';
 import { copyText, downloadText, readText } from '../../lib/clipboard';
+import { embedAssets } from '../../lib/assetStore';
 import { Sheet } from '../Sheet';
 import { Icon } from '../Icon';
 import { toast } from '../Chrome';
@@ -121,6 +122,16 @@ export function ExportSheet() {
   const { width, height } = ASPECT_SIZE[aspect];
   const name = fileName(project.name, 'json');
   const cmd = `npm run render -- ${name} --aspect ${aspect}`;
+  const [busy, setBusy] = useState(false);
+  const hasLocal = Object.values(project.assets).some(a => a.src.startsWith('local:'));
+  const download = async () => {
+    setBusy(true);
+    try {
+      const full = hasLocal ? await embedAssets(project) : project;
+      downloadText(name, JSON.stringify({ ...full, aspect }, null, hasLocal ? 0 : 2));
+    } catch { toast('Could not read your imported media from this device.'); }
+    finally { setBusy(false); }
+  };
   return (
     <Sheet title="Export video">
       <div className="seg" role="group" aria-label="Aspect ratio">
@@ -130,8 +141,9 @@ export function ExportSheet() {
         MP4 renders run on your computer with Remotion: {width}×{height}, {project.fps} fps, {project.duration.toFixed(1)} s.
       </p>
       <ol className="steps">
-        <li><button className="btn primary" onClick={() => downloadText(name, JSON.stringify({ ...project, aspect }, null, 2))}><Icon name="download" />Download {name}</button></li>
-        <li><span>In the <span className="mono">df-motion-studio</span> folder, run:</span>
+        <li><button className="btn primary" disabled={busy} onClick={download}><Icon name="download" />{busy ? 'Packing media…' : `Download ${name}`}</button>
+          {hasLocal ? <span className="hint" style={{ display: 'block', marginTop: 6 }}>Your imported media is packed into the file so it renders anywhere.</span> : null}</li>
+        <li><span>On your computer, in the <span className="mono">df-motion-studio</span> folder, run <span className="mono">npm install</span> once, then:</span>
           <button className="code" onClick={async () => toast((await copyText(cmd)) ? 'Command copied' : 'Copy was blocked')} aria-label="Copy render command">{cmd}</button></li>
         <li><span>The MP4 appears in <span className="mono">out/</span>.</span></li>
       </ol>

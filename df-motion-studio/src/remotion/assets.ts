@@ -1,3 +1,4 @@
+import { staticFile } from 'remotion';
 import type { Project } from '../schema/project';
 
 /**
@@ -16,5 +17,6 @@ export function resolveAsset(project: Project, assetId: string): string | null {
   const a = project.assets[assetId];
   if (!a) return null;
   if (a.src.startsWith('local:')) return localUrls.get(a.src.slice(6)) ?? null;
+  if (a.src.startsWith('static:')) return staticFile(a.src.slice(7));
   return a.src;
 }

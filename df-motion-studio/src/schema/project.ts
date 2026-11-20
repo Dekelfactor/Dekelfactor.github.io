@@ -62,8 +62,8 @@ export type Animated<V> = { keys: Keyframe<V>[]; value?: V; wiggle?: Wiggle };
 export const Asset = z.object({
   kind: z.enum(['video', 'image', 'model', 'audio']),
   name: z.string().max(200),
-  /** https URL, data: URL, or "local:<id>" for files kept in this browser */
-  src: z.string().max(50_000_000).refine(s => /^(https:|data:|local:|\/|\.\/)/.test(s), 'Asset src must be https:, data:, local: or a relative path'),
+  /** https URL, data: URL, "local:<id>" (kept in this browser) or "static:<file>" (render CLI) */
+  src: z.string().max(400_000_000).refine(s => /^(https:|data:(image|video|audio|model|application)\/|local:|static:[\w./-]+$)/.test(s) && !s.includes('..'), 'Asset src must be https:, a media data: URL, local: or static:'),
   /** natural aspect (w/h) once known */
   aspect: z.number().positive().optional(),
   duration: z.number().positive().optional(),

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useStudio } from './store/useStudio';
 import { OrbitHint, Viewport } from './ui/Viewport';
 import { NoticeLine, PromptBar, Rail, ScrubBar, Toast, TopBar } from './ui/Chrome';
@@ -7,6 +7,9 @@ import { TimelineSheet } from './ui/sheets/TimelineSheet';
 import { LayerSheet, LayersSheet } from './ui/sheets/LayerSheets';
 import { CameraSheet, EffectsSheet, LightSheet, SceneSheet } from './ui/sheets/SceneSheets';
 import { togglePlay } from './ui/player';
+import { DockedContext } from './ui/Sheet';
+import { PreviewBoundary } from './ui/ErrorBoundary';
+import type { SheetId } from './store/useStudio';
 
 function useSafeInsets() {
   const [s, setS] = useState({ top: 0, bottom: 0 });
@@ -35,7 +38,74 @@ function useSheetHeight(sheet: string) {
   return h;
 }
 
+const DESKTOP_Q = '(min-width: 1024px)';
+function useDesktop() {
+  return useSyncExternalStore(
+    f => { const m = window.matchMedia(DESKTOP_Q); m.addEventListener('change', f); return () => m.removeEventListener('change', f); },
+    () => window.matchMedia(DESKTOP_Q).matches,
+  );
+}
+
+function useShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) useStudio.getState().redo(); else useStudio.getState().undo(); }
+      else if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); useStudio.getState().redo(); }
+      else if (e.key === ' ' && (e.target as HTMLElement)?.getAttribute('role') !== 'slider' && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+}
+
+function SheetFor({ id }: { id: SheetId }) {
+  switch (id) {
+    case 'claude': return <ClaudeSheet />;
+    case 'project': return <ProjectSheet />;
+    case 'export': return <ExportSheet />;
+    case 'timeline': return <TimelineSheet />;
+    case 'layers': return <LayersSheet />;
+    case 'layer': return <LayerSheet />;
+    case 'light': return <LightSheet />;
+    case 'camera': return <CameraSheet />;
+    case 'scene': return <SceneSheet />;
+    case 'effects': return <EffectsSheet />;
+    default: return null;
+  }
+}
+
 export function App() {
+  return useDesktop() ? <DesktopApp /> : <MobileApp />;
+}
+
+/** Desktop: the same components in three panels, with the timeline docked under the stage. */
+function DesktopApp() {
+  useShortcuts();
+  const sheet = useStudio(s => s.sheet);
+  const selectedId = useStudio(s => s.selectedId);
+  const right: SheetId = ['timeline', 'layers', 'none'].includes(sheet) ? (selectedId ? 'layer' : 'light') : sheet;
+  return (
+    <div className="desk">
+      <TopBar />
+      <DockedContext.Provider value={true}>
+        <aside className="desk-left"><LayersSheet /></aside>
+        <main className="desk-center">
+          <PreviewBoundary><Viewport insets={{ top: 16, bottom: 150, left: 20, right: 20 }} /></PreviewBoundary>
+          <div className="dock desk-dock"><NoticeLine /><ScrubBar /><PromptBar /></div>
+          <OrbitHint />
+        </main>
+        <aside className="desk-right"><SheetFor id={right} /></aside>
+        <section className="desk-bottom"><TimelineSheet /></section>
+      </DockedContext.Provider>
+      <Toast />
+    </div>
+  );
+}
+
+function MobileApp() {
   const sheet = useStudio(s => s.sheet);
   const safe = useSafeInsets();
   const sheetH = useSheetHeight(sheet);
@@ -50,19 +120,7 @@ export function App() {
     return () => ro.disconnect();
   }, []);
 
-  // Keyboard shortcuts for desktop and hardware keyboards
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) useStudio.getState().redo(); else useStudio.getState().undo(); }
-      else if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); useStudio.getState().redo(); }
-      else if (e.key === ' ' && (e.target as HTMLElement)?.getAttribute('role') !== 'slider' && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  useShortcuts();
 
   const sheetOpen = sheet !== 'none';
   const bottomOffset = sheetOpen ? sheetH + 8 : 0;
@@ -75,7 +133,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Viewport insets={insets} />
+      <PreviewBoundary><Viewport insets={insets} /></PreviewBoundary>
       <TopBar />
       {sheetOpen ? null : <Rail />}
       <div className="dock" ref={dockRef} style={sheetOpen ? { bottom: bottomOffset } : undefined}>
@@ -83,16 +141,7 @@ export function App() {
         <ScrubBar />
         {sheetOpen ? null : <PromptBar />}
       </div>
-      {sheet === 'claude' ? <ClaudeSheet /> : null}
-      {sheet === 'project' ? <ProjectSheet /> : null}
-      {sheet === 'export' ? <ExportSheet /> : null}
-      {sheet === 'timeline' ? <TimelineSheet /> : null}
-      {sheet === 'layers' ? <LayersSheet /> : null}
-      {sheet === 'layer' ? <LayerSheet /> : null}
-      {sheet === 'light' ? <LightSheet /> : null}
-      {sheet === 'camera' ? <CameraSheet /> : null}
-      {sheet === 'scene' ? <SceneSheet /> : null}
-      {sheet === 'effects' ? <EffectsSheet /> : null}
+      <SheetFor id={sheet} />
       {sheetOpen ? null : <OrbitHint />}
       <Toast />
     </div>

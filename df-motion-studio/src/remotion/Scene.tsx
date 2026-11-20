@@ -27,6 +27,8 @@ export type CompositionProps = {
   dpr?: number;
   /** id of the selected layer, highlighted in the editor preview only */
   selectedId?: string | null;
+  /** render CLI only: render even if a protected logo leaves the safe area */
+  allowClipping?: boolean;
 };
 
 const FONTS = { newsreader: newsreaderWoff, geist: geistWoff, 'geist-mono': geistMonoWoff } as const;
@@ -51,7 +53,7 @@ export const StudioComposition: React.FC<CompositionProps> = ({ project, quality
         dpr={rendering ? 1 : dpr ?? 1}
         shadows={draft ? false : { type: THREE.PCFShadowMap }}
         frameloop="demand"
-        gl={{ antialias: !draft, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace, powerPreference: 'high-performance', preserveDrawingBuffer: rendering }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace, powerPreference: 'high-performance', preserveDrawingBuffer: rendering }}
         camera={{ fov: 35, near: 0.1, far: 300, position: [0, 2, 12] }}
       >
         <SceneContent project={project} t={t} frame={frame} draft={draft} videoRefs={videoRefs} rendering={rendering} />

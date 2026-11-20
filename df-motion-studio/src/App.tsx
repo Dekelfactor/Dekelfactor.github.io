@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStudio } from './store/useStudio';
-import { Viewport } from './ui/Viewport';
+import { OrbitHint, Viewport } from './ui/Viewport';
 import { NoticeLine, PromptBar, Rail, ScrubBar, Toast, TopBar } from './ui/Chrome';
 import { ClaudeSheet, ExportSheet, ProjectSheet } from './ui/sheets/ProjectSheets';
 import { TimelineSheet } from './ui/sheets/TimelineSheet';
 import { LayerSheet, LayersSheet } from './ui/sheets/LayerSheets';
-import { Sheet } from './ui/Sheet';
+import { CameraSheet, EffectsSheet, LightSheet, SceneSheet } from './ui/sheets/SceneSheets';
 import { togglePlay } from './ui/player';
 
 function useSafeInsets() {
@@ -89,9 +89,11 @@ export function App() {
       {sheet === 'timeline' ? <TimelineSheet /> : null}
       {sheet === 'layers' ? <LayersSheet /> : null}
       {sheet === 'layer' ? <LayerSheet /> : null}
-      {[ 'camera', 'light', 'scene', 'effects'].includes(sheet) ? (
-        <Sheet title={sheet[0].toUpperCase() + sheet.slice(1)} tool={sheet}><p className="hint">This inspector arrives in the next phase.</p></Sheet>
-      ) : null}
+      {sheet === 'light' ? <LightSheet /> : null}
+      {sheet === 'camera' ? <CameraSheet /> : null}
+      {sheet === 'scene' ? <SceneSheet /> : null}
+      {sheet === 'effects' ? <EffectsSheet /> : null}
+      {sheetOpen ? null : <OrbitHint />}
       <Toast />
     </div>
   );

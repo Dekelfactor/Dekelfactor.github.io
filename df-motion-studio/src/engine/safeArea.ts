@@ -3,9 +3,7 @@ import { ASPECT_SIZE, type Layer, type Project } from '../schema/project';
 import { valueAt } from './evaluate';
 import { SHAPE_BOUNDS } from '../remotion/geometry';
 
-type Bounds = [number, number, number, number, number, number];
-/** Measured local bounds for layers whose size is only known after loading (models, text). */
-export const measuredBounds = new Map<string, Bounds>();
+import { measuredBounds, type Bounds } from './bounds';
 
 function localBounds(layer: Layer): Bounds | null {
   const m = measuredBounds.get(layer.id);

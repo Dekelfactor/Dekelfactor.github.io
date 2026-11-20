@@ -1,12 +1,14 @@
-import React, { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { createRef, Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { Environment as DreiEnvironment, Lightformer, Text, useGLTF, useTexture } from '@react-three/drei';
 import { Bloom, DepthOfField, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
-import { ThreeCanvas } from '@remotion/three';
+import { ThreeCanvas, useOffthreadVideoTexture, useVideoTexture } from '@remotion/three';
+import { CameraMotionBlur } from '@remotion/motion-blur';
 import { Audio } from '@remotion/media';
-import { AbsoluteFill, Sequence, useCurrentFrame, useDelayRender, useVideoConfig, getRemotionEnvironment } from 'remotion';
+import { AbsoluteFill, Html5Video, Sequence, useCurrentFrame, useDelayRender, useVideoConfig, getRemotionEnvironment } from 'remotion';
+import { reportBounds } from '../engine/bounds';
 import type { Camera, Effects, Environment, Layer, Light, Project, Transform, Vec3 } from '../schema/project';
 import { valueAt } from '../engine/evaluate';
 import { getMonogram, getShapeGeometry } from './geometry';
@@ -37,9 +39,12 @@ export const StudioComposition: React.FC<CompositionProps> = ({ project, quality
   const rendering = getRemotionEnvironment().isRendering;
   const draft = quality === 'draft' && !rendering;
   const bg = valueAt(project.environment.background, t);
+  const videoIds = project.layers.filter(l => l.type === 'video').map(l => l.id).join('|');
+  const videoRefs = useMemo(() => Object.fromEntries(videoIds.split('|').filter(Boolean).map(id => [id, createRef<HTMLVideoElement>()])), [videoIds]);
+  const mb = project.effects.motionBlur;
+  const blur = rendering && mb.enabled;
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: bg }}>
+  const canvas = (
       <ThreeCanvas
         width={width}
         height={height}
@@ -49,16 +54,33 @@ export const StudioComposition: React.FC<CompositionProps> = ({ project, quality
         gl={{ antialias: !draft, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace, powerPreference: 'high-performance', preserveDrawingBuffer: rendering }}
         camera={{ fov: 35, near: 0.1, far: 300, position: [0, 2, 12] }}
       >
-        <SceneContent project={project} t={t} frame={frame} draft={draft} />
+        <SceneContent project={project} t={t} frame={frame} draft={draft} videoRefs={videoRefs} rendering={rendering} />
       </ThreeCanvas>
-      {project.layers.map(l => (l.type === 'audio' || l.type === 'video') && l.visible ? <LayerAudio key={l.id} project={project} layer={l} fps={fps} /> : null)}
+  );
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: bg }}>
+      {blur ? <CameraMotionBlur shutterAngle={mb.shutter * 360} samples={mb.samples}>{canvas}</CameraMotionBlur> : canvas}
+      {/* preview only: hidden, Remotion-synced <video> elements feed the 3D video textures */}
+      {rendering ? null : project.layers.map(l => {
+        if (l.type !== 'video') return null;
+        const src = resolveAsset(project, l.asset);
+        if (!src) return null;
+        return (
+          <Sequence key={l.id} from={Math.round(l.start * fps)} durationInFrames={Math.max(1, Math.round(l.duration * fps))} layout="none">
+            <Html5Video ref={videoRefs[l.id]} src={src} trimBefore={Math.round(l.trimStart * fps) || undefined} muted={!l.visible}
+              volume={f => valueAt(l.volume, l.start + f / fps)} style={{ position: 'absolute', width: 2, height: 2, opacity: 0, pointerEvents: 'none' }} />
+          </Sequence>
+        );
+      })}
+      {project.layers.map(l => (l.type === 'audio' || (l.type === 'video' && rendering)) && l.visible ? <LayerAudio key={l.id} project={project} layer={l} fps={fps} /> : null)}
     </AbsoluteFill>
   );
 };
 
 const LayerAudio: React.FC<{ project: Project; layer: Extract<Layer, { type: 'audio' | 'video' }>; fps: number }> = ({ project, layer, fps }) => {
   const src = resolveAsset(project, layer.asset);
-  if (!src || layer.type === 'video') return null; // video sound arrives with video layers in Phase 3
+  if (!src) return null;
   return (
     <Sequence from={Math.round(layer.start * fps)} durationInFrames={Math.max(1, Math.round(layer.duration * fps))} layout="none">
       <Audio src={src} trimBefore={Math.round(layer.trimStart * fps)} volume={f => valueAt(layer.volume, layer.start + f / fps)} />
@@ -68,7 +90,8 @@ const LayerAudio: React.FC<{ project: Project; layer: Extract<Layer, { type: 'au
 
 // ---------------------------------------------------------------- scene
 
-const SceneContent: React.FC<{ project: Project; t: number; frame: number; draft: boolean }> = ({ project, t, frame, draft }) => {
+type VideoRefs = Record<string, React.RefObject<HTMLVideoElement | null>>;
+const SceneContent: React.FC<{ project: Project; t: number; frame: number; draft: boolean; videoRefs: VideoRefs; rendering: boolean }> = ({ project, t, frame, draft, videoRefs, rendering }) => {
   const env = project.environment;
   const invalidate = useThree(s => s.invalidate);
   useEffect(() => { invalidate(); });
@@ -84,7 +107,7 @@ const SceneContent: React.FC<{ project: Project; t: number; frame: number; draft
       <StudioLight light={project.lights.fill} t={t} target={target} castShadow={false} />
       <StudioLight light={project.lights.rim} t={t} target={target} castShadow={false} />
       <Stage env={env} />
-      {project.layers.map(l => <LayerNode key={l.id} project={project} layer={l} t={t} />)}
+      {project.layers.map(l => <LayerNode key={l.id} project={project} layer={l} t={t} videoRef={videoRefs[l.id]} rendering={rendering} />)}
       {draft ? null : <PostFX effects={project.effects} camera={project.camera} t={t} frame={frame} />}
     </>
   );
@@ -225,26 +248,36 @@ export function evalTransform(tr: Transform, t: number) {
   };
 }
 
-const LayerNode: React.FC<{ project: Project; layer: Layer; t: number }> = ({ project, layer, t }) => {
+const LayerNode: React.FC<{ project: Project; layer: Layer; t: number; videoRef?: React.RefObject<HTMLVideoElement | null>; rendering: boolean }> = ({ project, layer, t, videoRef, rendering }) => {
   if (layer.type === 'audio') return null;
   const active = isLayerActive(layer, t);
   const tr = evalTransform(layer.transform, t);
   return (
     <group visible={active && tr.opacity > 0.001} position={tr.position} rotation={tr.rotation} scale={tr.scale} name={layer.id}>
       <Suspense fallback={null}>
-        <LayerBody project={project} layer={layer} t={t} opacity={tr.opacity} />
+        <LayerBody project={project} layer={layer} t={t} opacity={tr.opacity} videoRef={videoRef} rendering={rendering} />
       </Suspense>
     </group>
   );
 };
 
-function LayerBody({ project, layer, t, opacity }: { project: Project; layer: Exclude<Layer, { type: 'audio' }>; t: number; opacity: number }) {
+function LayerBody({ project, layer, t, opacity, videoRef, rendering }: { project: Project; layer: Exclude<Layer, { type: 'audio' }>; t: number; opacity: number; videoRef?: React.RefObject<HTMLVideoElement | null>; rendering: boolean }) {
   switch (layer.type) {
     case 'shape': return <ShapeBody layer={layer} t={t} opacity={opacity} />;
     case 'text': return <TextBody layer={layer} t={t} opacity={opacity} />;
-    case 'model': { const url = resolveAsset(project, layer.asset); return url ? <ModelBody url={url} opacity={opacity} /> : null; }
+    case 'model': { const url = resolveAsset(project, layer.asset); return url ? <ModelBody id={layer.id} url={url} opacity={opacity} /> : null; }
     case 'image': { const url = resolveAsset(project, layer.asset); return url ? <ImageBody url={url} width={layer.width} opacity={opacity} /> : null; }
-    case 'video': return <VideoPlaceholder width={layer.width} aspect={project.assets[layer.asset]?.aspect ?? 16 / 9} opacity={opacity} />;
+    case 'video': {
+      const url = resolveAsset(project, layer.asset);
+      const aspect = project.assets[layer.asset]?.aspect ?? 16 / 9;
+      if (!url) return <VideoPlane tex={null} width={layer.width} aspect={aspect} opacity={opacity} />;
+      if (rendering) return (
+        <Sequence from={Math.round((layer.start - layer.trimStart) * project.fps)} layout="none">
+          <OffthreadVideoBody src={url} width={layer.width} aspect={aspect} opacity={opacity} />
+        </Sequence>
+      );
+      return videoRef ? <PreviewVideoBody videoRef={videoRef} width={layer.width} aspect={aspect} opacity={opacity} /> : null;
+    }
   }
 }
 
@@ -282,7 +315,11 @@ function TextBody({ layer, t, opacity }: { layer: Extract<Layer, { type: 'text' 
     handle.current = h;
     return () => { if (handle.current !== null) { continueRender(handle.current); handle.current = null; } };
   }, [layer.text, layer.font, layer.size, layer.letterSpacing, delayRender, continueRender]);
-  const onSync = () => { if (handle.current !== null) { continueRender(handle.current); handle.current = null; } };
+  const onSync = (troika: { textRenderInfo?: { blockBounds?: number[] } }) => {
+    const bb = troika?.textRenderInfo?.blockBounds;
+    if (bb && bb.length === 4) reportBounds(layer.id, [bb[0], bb[1], 0, bb[2], bb[3], 0]);
+    if (handle.current !== null) { continueRender(handle.current); handle.current = null; }
+  };
   return (
     <Text
       font={FONTS[layer.font]}
@@ -302,10 +339,12 @@ function TextBody({ layer, t, opacity }: { layer: Extract<Layer, { type: 'text' 
   );
 }
 
-function ModelBody({ url, opacity }: { url: string; opacity: number }) {
+function ModelBody({ id, url, opacity }: { id: string; url: string; opacity: number }) {
   const gltf = useGLTF(url, './draco/');
   const scene = useMemo(() => {
     const s = gltf.scene.clone(true);
+    const b = new THREE.Box3().setFromObject(s);
+    if (!b.isEmpty()) reportBounds(id, [b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z]);
     s.traverse(o => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {
@@ -314,7 +353,7 @@ function ModelBody({ url, opacity }: { url: string; opacity: number }) {
       }
     });
     return s;
-  }, [gltf]);
+  }, [gltf, id]);
   useLayoutEffect(() => {
     scene.traverse(o => {
       const m = o as THREE.Mesh;
@@ -338,11 +377,21 @@ function ImageBody({ url, width, opacity }: { url: string; width: number; opacit
   );
 }
 
-function VideoPlaceholder({ width, aspect, opacity }: { width: number; aspect: number; opacity: number }) {
+function PreviewVideoBody({ videoRef, ...rest }: { videoRef: React.RefObject<HTMLVideoElement | null>; width: number; aspect: number; opacity: number }) {
+  const tex = useVideoTexture(videoRef);
+  return <VideoPlane tex={tex} {...rest} />;
+}
+function OffthreadVideoBody({ src, ...rest }: { src: string; width: number; aspect: number; opacity: number }) {
+  const tex = useOffthreadVideoTexture({ src });
+  return <VideoPlane tex={tex} {...rest} />;
+}
+function VideoPlane({ tex, width, aspect, opacity }: { tex: THREE.Texture | null; width: number; aspect: number; opacity: number }) {
+  if (tex) tex.colorSpace = THREE.SRGBColorSpace;
   return (
     <mesh>
       <planeGeometry args={[width, width / aspect]} />
-      <meshStandardMaterial color="#332d26" transparent opacity={opacity} />
+      {tex ? <meshBasicMaterial map={tex} toneMapped={false} transparent={opacity < 0.999} opacity={opacity} side={THREE.DoubleSide} />
+        : <meshStandardMaterial color="#332d26" transparent opacity={opacity} />}
     </mesh>
   );
 }

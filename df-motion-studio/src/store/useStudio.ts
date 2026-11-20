@@ -174,6 +174,7 @@ function runScan() {
   }, 250);
 }
 useStudio.subscribe(s => s.project, runScan);
+import('../engine/bounds').then(m => m.onBoundsChange(runScan));
 
 // ---- make local media playable whenever the asset list changes (boot, import, paste) ----
 let lastAssetKeys = '';

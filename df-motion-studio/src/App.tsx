@@ -3,6 +3,8 @@ import { useStudio } from './store/useStudio';
 import { Viewport } from './ui/Viewport';
 import { NoticeLine, PromptBar, Rail, ScrubBar, Toast, TopBar } from './ui/Chrome';
 import { ClaudeSheet, ExportSheet, ProjectSheet } from './ui/sheets/ProjectSheets';
+import { TimelineSheet } from './ui/sheets/TimelineSheet';
+import { LayerSheet, LayersSheet } from './ui/sheets/LayerSheets';
 import { Sheet } from './ui/Sheet';
 import { togglePlay } from './ui/player';
 
@@ -68,14 +70,14 @@ export function App() {
     top: safe.top + 8 + 52 + 12,
     bottom: sheetOpen ? sheetH + 8 + 64 : dockH + safe.bottom + 20,
     left: 12,
-    right: 70,
+    right: sheetOpen ? 12 : 70,
   };
 
   return (
     <div className="app">
       <Viewport insets={insets} />
       <TopBar />
-      <Rail />
+      {sheetOpen ? null : <Rail />}
       <div className="dock" ref={dockRef} style={sheetOpen ? { bottom: bottomOffset } : undefined}>
         <NoticeLine />
         <ScrubBar />
@@ -84,8 +86,11 @@ export function App() {
       {sheet === 'claude' ? <ClaudeSheet /> : null}
       {sheet === 'project' ? <ProjectSheet /> : null}
       {sheet === 'export' ? <ExportSheet /> : null}
-      {['timeline', 'layers', 'camera', 'light', 'scene', 'effects'].includes(sheet) ? (
-        <Sheet title={sheet[0].toUpperCase() + sheet.slice(1)}><p className="hint">This inspector arrives in the next phase.</p></Sheet>
+      {sheet === 'timeline' ? <TimelineSheet /> : null}
+      {sheet === 'layers' ? <LayersSheet /> : null}
+      {sheet === 'layer' ? <LayerSheet /> : null}
+      {[ 'camera', 'light', 'scene', 'effects'].includes(sheet) ? (
+        <Sheet title={sheet[0].toUpperCase() + sheet.slice(1)} tool={sheet}><p className="hint">This inspector arrives in the next phase.</p></Sheet>
       ) : null}
       <Toast />
     </div>

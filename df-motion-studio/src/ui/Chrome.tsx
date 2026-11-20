@@ -47,7 +47,7 @@ export function TopBar() {
 }
 
 // ---------- tool rail ----------
-const TOOLS: { id: SheetId; icon: string; label: string }[] = [
+export const TOOLS: { id: SheetId; icon: string; label: string }[] = [
   { id: 'timeline', icon: 'timeline', label: 'Timeline' },
   { id: 'layers', icon: 'layers', label: 'Layers' },
   { id: 'camera', icon: 'camera', label: 'Camera' },

@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { useStudio } from '../store/useStudio';
+import { useStudio, type SheetId } from '../store/useStudio';
 import { Icon } from './Icon';
+import { TOOLS } from './Chrome';
 
 /**
  * Non-modal bottom sheet (the preview stays visible above it). Drag the grab
  * handle down or flick to dismiss; Escape closes it. On desktop the same
  * component docks as a side panel via CSS.
  */
-export function Sheet({ title, children, actions, label }: { title: string; children: React.ReactNode; actions?: React.ReactNode; label?: string }) {
+export function Sheet({ title, children, actions, label, tool }: { title: string; children: React.ReactNode; actions?: React.ReactNode; label?: string; tool?: SheetId }) {
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ y: number; t: number; dy: number } | null>(null);
   const close = () => useStudio.getState().openSheet('none');
@@ -45,6 +46,15 @@ export function Sheet({ title, children, actions, label }: { title: string; chil
   return (
     <section ref={ref} className="sheet glass" role="dialog" aria-modal="false" aria-label={label ?? title}>
       <div className="sheet-grab" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} aria-hidden="true" />
+      {tool ? (
+        <nav className="tool-tabs" aria-label="Tools">
+          {TOOLS.map(t => (
+            <button key={t.id} className={t.id === tool ? 'on' : ''} aria-current={t.id === tool ? 'page' : undefined} onClick={() => useStudio.getState().openSheet(t.id)}>
+              <Icon name={t.icon} />{t.label}
+            </button>
+          ))}
+        </nav>
+      ) : null}
       <div className="sheet-head">
         <h2 tabIndex={-1}>{title}</h2>
         {actions}

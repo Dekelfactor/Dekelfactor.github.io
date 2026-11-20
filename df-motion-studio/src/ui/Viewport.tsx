@@ -13,6 +13,7 @@ export function Viewport({ insets, children }: { insets: Insets; children?: Reac
   const quality = useStudio(s => s.quality);
   const setTime = useStudio(s => s.setTime);
   const setPlaying = useStudio(s => s.setPlaying);
+  const assetsVersion = useStudio(s => s.assetsVersion);
   const playerRef = useRef<PlayerRef>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ w: 390, h: 844 });
@@ -39,7 +40,8 @@ export function Viewport({ insets, children }: { insets: Insets; children?: Reac
   const dpr = Math.max(0.25, Math.min(2, scale * Math.min(deviceDpr, cap)));
   const durationInFrames = Math.max(1, Math.round(project.duration * project.fps));
 
-  const inputProps = useMemo<CompositionProps>(() => ({ project, quality, dpr: Number(dpr.toFixed(3)) }), [project, quality, dpr]);
+  // assetsVersion forces a fresh props object once local media URLs are registered
+  const inputProps = useMemo<CompositionProps>(() => ({ project, quality, dpr: Number(dpr.toFixed(3)) }), [project, quality, dpr, assetsVersion]);
 
   useEffect(() => {
     const p = playerRef.current;

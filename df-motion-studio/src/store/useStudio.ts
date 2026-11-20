@@ -22,6 +22,11 @@ type State = {
   sheet: SheetId;
   notice: Notice;
   safeAreaIssue: { text: string; time: number } | null;
+  /** a keyframe column picked in the timeline: owner is a layer id, 'camera' or 'lights' */
+  selectedKey: { owner: string; t: number } | null;
+  snapOn: boolean;
+  /** bumps when local media becomes playable, so the preview re-resolves asset URLs */
+  assetsVersion: number;
 };
 
 type Actions = {
@@ -37,12 +42,26 @@ type Actions = {
   openSheet: (s: SheetId) => void;
   dismissNotice: () => void;
   setSafeAreaIssue: (s: { text: string; time: number } | null) => void;
+  selectKey: (k: { owner: string; t: number } | null) => void;
+  setSnap: (on: boolean) => void;
 };
 
 const STORAGE_KEY = 'dfms:project:v1';
 const PREFS_KEY = 'dfms:prefs:v1';
 const HISTORY_LIMIT = 120;
 const COALESCE_MS = 700;
+
+/**
+ * Edits made while a pointer is held down (a drag, a slider, a pinch) are one
+ * gesture, and collapse into a single undo step however slowly frames render.
+ */
+let pointerHeld = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', () => { pointerHeld = true; }, true);
+  const release = () => { pointerHeld = false; };
+  window.addEventListener('pointerup', release, true);
+  window.addEventListener('pointercancel', release, true);
+}
 
 function loadInitial(): Project {
   try {
@@ -76,13 +95,16 @@ export const useStudio = create<State & Actions>()(subscribeWithSelector((set, g
   sheet: 'none',
   notice: null,
   safeAreaIssue: null,
+  selectedKey: null,
+  snapOn: true,
+  assetsVersion: 0,
 
   edit: (fn, coalesceKey) => {
     const s = get();
     const draft = structuredClone(s.project);
     fn(draft);
     const now = performance.now();
-    const coalesce = coalesceKey && coalesceKey === s.lastKey && now - s.lastAt < COALESCE_MS;
+    const coalesce = !!coalesceKey && coalesceKey === s.lastKey && (pointerHeld || now - s.lastAt < COALESCE_MS);
     set({
       project: draft,
       past: coalesce ? s.past : [...s.past, s.project].slice(-HISTORY_LIMIT),
@@ -117,11 +139,13 @@ export const useStudio = create<State & Actions>()(subscribeWithSelector((set, g
   },
   setTime: t => set({ time: Math.max(0, Math.min(t, get().project.duration)) }),
   setPlaying: p => set({ playing: p }),
-  select: id => set({ selectedId: id }),
+  select: id => set({ selectedId: id, selectedKey: null }),
   setQuality: q => { set({ quality: q }); try { localStorage.setItem(PREFS_KEY, JSON.stringify({ quality: q })); } catch { /* ignore */ } },
   openSheet: sheet => set({ sheet }),
   dismissNotice: () => set({ notice: null }),
   setSafeAreaIssue: safeAreaIssue => set({ safeAreaIssue }),
+  selectKey: selectedKey => set({ selectedKey }),
+  setSnap: snapOn => set({ snapOn }),
 })));
 
 // ---- autosave (debounced; survives reloads, never blocks the UI) ----
@@ -150,6 +174,21 @@ function runScan() {
   }, 250);
 }
 useStudio.subscribe(s => s.project, runScan);
+
+// ---- make local media playable whenever the asset list changes (boot, import, paste) ----
+let lastAssetKeys = '';
+async function hydrate() {
+  const { project } = useStudio.getState();
+  const keys = Object.values(project.assets).map(a => a.src).filter(s => s.startsWith('local:')).sort().join('|');
+  if (keys === lastAssetKeys) return;
+  lastAssetKeys = keys;
+  const { hydrateAssets } = await import('../lib/assetStore');
+  const missing = await hydrateAssets(project);
+  useStudio.setState(s => ({ assetsVersion: s.assetsVersion + 1 }));
+  if (missing.length) console.warn(`Media not found on this device: ${missing.join(', ')}`);
+}
+useStudio.subscribe(s => s.project.assets, () => { void hydrate(); });
+if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') void hydrate();
 if (typeof window !== 'undefined') runScan();
 
 // ---- helpers ----

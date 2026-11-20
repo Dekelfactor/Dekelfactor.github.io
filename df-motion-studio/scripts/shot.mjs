@@ -18,7 +18,8 @@ await page.goto(url, { waitUntil: 'load' });
 if (actionsFile) {
   const actions = JSON.parse(fs.readFileSync(actionsFile, 'utf8'));
   for (const a of actions) {
-    if (a.click) await page.click(a.click);
+    console.log('step', JSON.stringify(a).slice(0, 90));
+    if (a.click) await page.click(a.click, { timeout: 8000 });
     if (a.eval) await page.evaluate(a.eval);
     if (a.fill) await page.fill(a.fill[0], a.fill[1]);
     if (a.fillEval) await page.fill(a.fillEval[0], await page.evaluate(a.fillEval[1]));
